@@ -157,7 +157,7 @@ useEffect(() => {
       {/* 1. HEADER */}
       <header className="px-5 py-4 bg-[#0a0c12]/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-50 sticky top-0">
         <div className="flex flex-col">
-          <h2 className="font-black text-amber-500 italic text-2xl tracking-tighter drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">RİCH KAZİNO</h2>
+          <h2 className="font-black text-amber-500 italic text-2xl tracking-tighter drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">KAROL KAZİNO</h2>
           <span className="text-[7px] font-black text-amber-500/50 uppercase tracking-[0.3em] -mt-1">Premium Casino</span>
         </div>
         {user ? (
@@ -348,7 +348,7 @@ useEffect(() => {
           <aside className="fixed left-0 top-0 h-full w-80 bg-[#0a0c12] z-[70] flex flex-col border-r border-white/10 animate-in slide-in-from-left duration-300">
             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
               <div className="flex flex-col">
-                <h1 className="text-xl font-black text-amber-500 italic leading-none">RİCH KAZİNO</h1>
+                <h1 className="text-xl font-black text-amber-500 italic leading-none">KAROL KAZİNO</h1>
                 <span className="text-[8px] font-black text-amber-500/30 uppercase tracking-widest mt-1">Menu Browser</span>
               </div>
               <button 
@@ -396,7 +396,7 @@ useEffect(() => {
                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:scale-150 transition-transform duration-700">
                     <Award size={80} />
                  </div>
-                 <h4 className="text-xs font-black text-white mb-1 uppercase italic">RİCH KAZİNO VIP</h4>
+                 <h4 className="text-xs font-black text-white mb-1 uppercase italic">KAROL KAZİNO VIP</h4>
                  <p className="text-[10px] text-slate-400 mb-4 leading-relaxed">Özəl bonuslar və sürətli çıxarışlar üçün VIP statusu əldə edin.</p>
                  <button className="text-[9px] font-black text-amber-500 uppercase tracking-widest underline decoration-2 underline-offset-4">Ətraflı Öyrən</button>
               </div>
@@ -420,7 +420,7 @@ useEffect(() => {
                <button onClick={() => setAboutOpen(false)}><X /></button>
             </div>
             <div className="p-8 overflow-y-auto space-y-6 text-sm text-slate-300">
-               <p>2018-ci ildən fəaliyyət göstərən Rich kazino, regionun ən etibarlı və şəffaf platformasıdır.</p>
+               <p>2018-ci ildən fəaliyyət göstərən Karol Kazino, regionun ən etibarlı və şəffaf platformasıdır.</p>
                <div className="bg-white/5 p-5 rounded-3xl border border-white/5 space-y-3">
                   <h4 className="text-white font-black flex items-center gap-2"><ShieldCheck size={20} className="text-green-500"/> LİSENZİYA</h4>
                   <p>Lisenziya: Curacao No. 8048/JAZ. SSL şifrələmə ilə qorunur.</p>
@@ -544,7 +544,7 @@ useEffect(() => {
                  <Zap size={32} className="text-amber-500 fill-amber-500/20" />
               </div>
               <h2 className="text-2xl font-black text-white italic tracking-tighter mb-2">XOŞ GƏLMİSİNİZ!</h2>
-              <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black">Rich kazino Premium</p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-[0.3em] font-black">Karol Kazino Premium</p>
             </div>
 
             <div className="space-y-4 relative z-10">
