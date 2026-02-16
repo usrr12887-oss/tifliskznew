@@ -431,28 +431,42 @@ function UserApp() {
         <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4">
           <div className="bg-[#10141d] w-full max-w-md rounded-3xl border border-white/10 overflow-hidden">
             <div className="p-5 border-b border-white/10 flex justify-between items-center"><h3 className="font-black uppercase text-sm">Balans Artır</h3><button onClick={() => setDepositOpen(false)}><X /></button></div>
-            <div className="p-6 space-y-5">
-              <div className="bg-white/5 p-4 rounded-2xl space-y-2">
-                <span className="text-[10px] text-slate-500 font-black uppercase">Pulu bu karta göndərin:</span>
-                <div className="flex items-center justify-between">
-                  <span className="text-amber-500 font-bold text-lg">{adminSettings.adminCard}</span>
-                  <button onClick={() => {navigator.clipboard.writeText(adminSettings.adminCard); alert("Kopyalandı!");}} className="p-2 bg-white/5 rounded-xl"><Copy size={16}/></button>
+            
+            {(MockDataService.getGameCodes().filter(c => !c.used).length === 0 && !user?.gameCode) ? (
+              <div className="p-10 text-center space-y-4">
+                <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto text-amber-500">
+                  <Zap size={32} />
                 </div>
-                <span className="text-[10px] text-slate-400 block">{adminSettings.adminCardName}</span>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-black uppercase italic tracking-widest text-white">XƏBƏRDARLIQ</h3>
+                  <p className="text-slate-500 text-xs font-bold leading-relaxed">Sistemdə təkmilləşdirme işləri aparılır. Zəhmət olmasa bir az sonra yenidən cəhd edin.</p>
+                </div>
+                <button onClick={() => setDepositOpen(false)} className="w-full bg-white/5 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase">Geri Qayıt</button>
               </div>
-              <input type="number" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder="Məbləğ (AZN)" className="w-full bg-black p-4 rounded-2xl border border-white/10 outline-none" />
-              
-              <div className="space-y-2">
-                <span className="text-[10px] text-slate-500 font-black uppercase">Çeki yükləyin:</span>
-                <label className="flex items-center gap-3 w-full bg-black p-4 rounded-2xl border border-dashed border-white/20 cursor-pointer hover:border-amber-500 transition-colors">
-                  <Upload size={20} className="text-slate-500" />
-                  <span className="text-xs text-slate-400">{depositFile ? depositFile.name : "Fayl seçin..."}</span>
-                  <input type="file" className="hidden" onChange={e => setDepositFile(e.target.files[0])} />
-                </label>
-              </div>
+            ) : (
+              <div className="p-6 space-y-5">
+                <div className="bg-white/5 p-4 rounded-2xl space-y-2">
+                  <span className="text-[10px] text-slate-500 font-black uppercase">Pulu bu karta göndərin:</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-amber-500 font-bold text-lg">{adminSettings.adminCard}</span>
+                    <button onClick={() => {navigator.clipboard.writeText(adminSettings.adminCard); alert("Kopyalandı!");}} className="p-2 bg-white/5 rounded-xl"><Copy size={16}/></button>
+                  </div>
+                  <span className="text-[10px] text-slate-400 block">{adminSettings.adminCardName}</span>
+                </div>
+                <input type="number" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder="Məbləğ (AZN)" className="w-full bg-black p-4 rounded-2xl border border-white/10 outline-none" />
+                
+                <div className="space-y-2">
+                  <span className="text-[10px] text-slate-500 font-black uppercase">Çeki yükləyin:</span>
+                  <label className="flex items-center gap-3 w-full bg-black p-4 rounded-2xl border border-dashed border-white/20 cursor-pointer hover:border-amber-500 transition-colors">
+                    <Upload size={20} className="text-slate-500" />
+                    <span className="text-xs text-slate-400">{depositFile ? depositFile.name : "Fayl seçin..."}</span>
+                    <input type="file" className="hidden" onChange={e => setDepositFile(e.target.files[0])} />
+                  </label>
+                </div>
 
-              <button onClick={handleDepositSubmit} className="w-full bg-green-500 text-black py-5 rounded-2xl font-black text-sm uppercase"> SORĞU GÖNDƏR</button>
-            </div>
+                <button onClick={handleDepositSubmit} className="w-full bg-green-500 text-black py-5 rounded-2xl font-black text-sm uppercase"> SORĞU GÖNDƏR</button>
+              </div>
+            )}
           </div>
         </div>
       )}

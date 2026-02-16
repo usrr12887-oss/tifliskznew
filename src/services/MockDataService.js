@@ -76,18 +76,7 @@ export const MockDataService = {
       MockDataService.assignCodeToUser(userId, availableCode.code);
       return availableCode.code;
     }
-
-    // NEW: If no codes are available in the pool, generate a fresh 6-digit code automatically
-    const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Add it to the pool as used
-    const allCodes = MockDataService.getGameCodes();
-    localStorage.setItem(MOCK_CODES_KEY, JSON.stringify([...allCodes, { id: Date.now(), code: generatedCode, used: true }]));
-    
-    // Assign it to user
-    MockDataService.assignCodeToUser(userId, generatedCode);
-    
-    return generatedCode;
+    return null;
   },
 
   getTransactions: () => {
