@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import {
   Menu, X, Home, Wallet, ArrowDownLeft, ArrowUpRight, Search,
   CreditCard, Upload, Copy, Info, CheckCircle, Users, ShieldCheck,
-  Award, Bell, Zap, Trophy, MessageCircle
+  Zap, Clock
 } from "lucide-react";
 import AdminDashboard from "./admin/AdminDashboard";
 import { MockDataService } from "./services/MockDataService";
@@ -53,7 +53,6 @@ function UserApp() {
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [profileOpen, setProfileOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [balance, setBalance] = useState(0);
 
@@ -69,7 +68,6 @@ function UserApp() {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [transactionsOpen, setTransactionsOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
-  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositFile, setDepositFile] = useState(null);
   
   const [withdrawCard, setWithdrawCard] = useState("");
@@ -77,6 +75,7 @@ function UserApp() {
 
   const [gameModalOpen, setGameModalOpen] = useState(false);
   const [currentGameCode, setCurrentGameCode] = useState("");
+  const [pendingDeposit, setPendingDeposit] = useState(null);
 
   const navigate = useNavigate();
 
@@ -121,7 +120,6 @@ function UserApp() {
           // Handle Callback Queries (Buttons)
           if (update.callback_query) {
             const data = update.callback_query.data;
-            const messageId = update.callback_query.message.message_id;
             
             if (data.startsWith('approve_')) {
               const txId = data.split('_')[1];
@@ -140,6 +138,23 @@ function UserApp() {
     const interval = setInterval(pollTelegram, 5000); 
     return () => clearInterval(interval);
   }, [lastUpdateId]);
+
+  // Track Pending Deposit Status
+  useEffect(() => {
+    if (!pendingDeposit) return;
+    if (pendingDeposit.status !== 'pending') return;
+
+    const checkStatus = () => {
+      const txs = MockDataService.getTransactions();
+      const current = txs.find(t => t.id === pendingDeposit.id);
+      if (current && current.status !== 'pending') {
+        setPendingDeposit(current);
+      }
+    };
+
+    const interval = setInterval(checkStatus, 2000);
+    return () => clearInterval(interval);
+  }, [pendingDeposit]);
 
   // Persistence
   useEffect(() => {
@@ -201,16 +216,17 @@ function UserApp() {
     if (!depositAmount || depositAmount <= 0) return alert("Məbləği daxil edin.");
     if (!depositFile) return alert("Zəhmət olmasa çeki (skrinşot) yükləyin.");
     
-    MockDataService.addTransaction({
+    const newTx = MockDataService.addTransaction({
       username: user.username,
       amount: parseFloat(depositAmount),
       type: "deposit",
       receipt: depositFile // Pass actual file object
     });
+    
+    setPendingDeposit(newTx);
     setDepositOpen(false);
     setDepositAmount("");
     setDepositFile(null);
-    alert("Depozit sorğunuz göndərildi. Təsdiq gözlənilir.");
   };
 
   const handleWithdrawSubmit = () => {
@@ -583,6 +599,75 @@ function UserApp() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {pendingDeposit && (
+        <div className="fixed inset-0 bg-black/95 z-[500] flex items-center justify-center p-6 backdrop-blur-3xl">
+          <div className="bg-[#0f111a] w-full max-w-sm rounded-[48px] border border-white/10 p-10 text-center space-y-8 animate-in zoom-in duration-300">
+            {pendingDeposit.status === 'pending' && (
+              <>
+                <div className="relative mx-auto w-24 h-24">
+                  <div className="absolute inset-0 border-4 border-amber-500/20 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center text-amber-500">
+                    <Clock size={32} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black uppercase italic tracking-widest">ÖDƏNİŞİNİZ YOXLANILIR</h3>
+                  <p className="text-slate-500 text-xs font-bold leading-relaxed px-4">Zəhmət olmasa gözləyin. Admin tərəfindən ödənişiniz təsdiqlənən kimi balansınız yenilənəcək.</p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-3xl border border-white/5">
+                   <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Məbləğ</p>
+                   <p className="text-xl font-black text-white">{pendingDeposit.amount.toFixed(2)} ₼</p>
+                </div>
+              </>
+            )}
+
+            {pendingDeposit.status === 'approved' && (
+              <>
+                <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto text-green-500 animate-in zoom-in duration-500">
+                  <CheckCircle size={48} />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black uppercase italic tracking-widest text-green-500">TƏSDİQLƏNDİ!</h3>
+                  <p className="text-slate-500 text-xs font-bold leading-relaxed">Ödənişiniz uğurla tamamlandı. Artıq balansınızdan istifadə edə bilərsiniz.</p>
+                </div>
+                <button 
+                  onClick={() => setPendingDeposit(null)} 
+                  className="w-full bg-green-500 text-black py-5 rounded-3xl font-black text-xs uppercase tracking-widest"
+                >
+                  BAŞLA
+                </button>
+              </>
+            )}
+
+            {pendingDeposit.status === 'rejected' && (
+              <>
+                <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto text-red-500 animate-in zoom-in duration-500">
+                  <X size={48} />
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black uppercase italic tracking-widest text-red-500">RƏDD EDİLDİ</h3>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase">Təəssüf ki, sorğunuz qəbul edilmədi.</p>
+                  </div>
+                  {pendingDeposit.reason && (
+                    <div className="bg-red-500/5 border border-red-500/10 p-5 rounded-3xl">
+                      <p className="text-[10px] text-red-500 font-black uppercase mb-1">Səbəb:</p>
+                      <p className="text-xs text-slate-300 italic leading-relaxed">{pendingDeposit.reason}</p>
+                    </div>
+                  )}
+                </div>
+                <button 
+                  onClick={() => setPendingDeposit(null)} 
+                  className="w-full bg-white/5 text-slate-400 py-5 rounded-3xl font-black text-xs uppercase tracking-widest"
+                >
+                  BAĞLA
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

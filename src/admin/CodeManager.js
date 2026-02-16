@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MockDataService } from "../services/MockDataService";
-import { Plus, Trash2, Key, Users, Check, X } from "lucide-react";
+import { Plus, Trash2, Key, Users, X } from "lucide-react";
 
 export default function CodeManager() {
   const [codes, setCodes] = useState([]);
