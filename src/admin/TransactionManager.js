@@ -33,7 +33,8 @@ export default function TransactionManager() {
       </div>
 
       <div className="bg-[#0f111a] rounded-[32px] border border-white/5 overflow-hidden">
-        <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="border-b border-white/5 bg-white/2">
               <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">İstifadəçi</th>
@@ -109,6 +110,7 @@ export default function TransactionManager() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

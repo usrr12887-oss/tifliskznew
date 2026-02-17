@@ -132,25 +132,18 @@ function UserApp() {
               const originalMsgId = update.message.reply_to_message.message_id;
               
               const txs = MockDataService.getTransactions();
-              // Check if reply is to notification OR prompt
+              // Check if reply is to notification 
               const tx = txs.find(t => 
                 (t.telegramMessageId === originalMsgId || t.telegramPromptId === originalMsgId) && 
                 t.status === 'pending'
               );
               
-              if (tx) {
-                if (tx.type === 'deposit') {
-                    // If it's a deposit, we assume the reply is the game code
-                    MockDataService.updateTransactionStatus(tx.id, 'approved', null, repliedText);
-                    TelegramService.sendMessage(`✅ <b>Sorğu #${tx.id}</b> təsdiqləndi!\n👤 İstifadəçi: ${tx.username}\n🔑 Oyun Kodu: <code>${repliedText}</code>`);
-                } else if (tx.type === 'withdraw' || (tx.type === 'deposit' && repliedText.startsWith('/'))) {
-                    // If it's a withdrawal or a command, handle rejection or other logic
-                    // But here we'll simplify: if they clicked "Reject" and replied, it's a rejection.
-                    // We can check if the prompt message was for rejection.
-                    // For now, let's just use a simple rule: if it's a reply to a prompt message, we process it.
-                    MockDataService.updateTransactionStatus(tx.id, 'rejected', repliedText);
-                    TelegramService.sendMessage(`❌ <b>Sorğu #${tx.id}</b> rədd edildi.\nSəbəb: ${repliedText}`);
-                }
+              if (tx && tx.status === 'pending') {
+                // Store reply in transaction state
+                const txsFull = MockDataService.getTransactions();
+                const updated = txsFull.map(t => t.id === tx.id ? { ...t, lastTelegramReply: repliedText } : t);
+                localStorage.setItem("casino_mock_transactions", JSON.stringify(updated));
+                TelegramService.sendMessage(`✍️ <b>Sorğu #${tx.id}</b> üçün mətn qəbul edildi: "<i>${repliedText}</i>"\nİndi təsdiqləmək və ya ləğv etmək üçün yuxarıdakı düymələri sıxa bilərsiniz.`);
               }
             }
           }
@@ -165,28 +158,27 @@ function UserApp() {
               const tx = txs.find(t => t.id === Number(txId));
               
               if (tx && tx.type === 'deposit') {
-                TelegramService.sendMessage(`✍️ <b>Sorğu #${txId}</b> təsdiqləmək üçün zəhmət olmasa bu mesajı <b>OYUN KODU</b> yazaraq CAVABLANDIRIN (Reply).`)
-                .then(res => {
-                  if (res && res.ok) {
-                    const txsFresh = MockDataService.getTransactions();
-                    const updated = txsFresh.map(t => t.id === Number(txId) ? { ...t, telegramPromptId: res.result.message_id } : t);
-                    localStorage.setItem("casino_mock_transactions", JSON.stringify(updated));
-                  }
-                });
+                if (tx.lastTelegramReply) {
+                  MockDataService.updateTransactionStatus(txId, 'approved', null, tx.lastTelegramReply);
+                  TelegramService.sendMessage(`✅ <b>Sorğu #${txId}</b> təsdiqləndi.\n🔑 Oyun Kodu: <code>${tx.lastTelegramReply}</code>`);
+                } else {
+                  TelegramService.sendMessage(`⚠️ <b>DİQQƏT:</b> Oyun kodunu daxil etməmisiniz.\nZəhmət olmasa əsas mesajı <b>OYUN KODU</b> yazaraq cavablandırın (Reply), sonra yenidən bu düyməni sıxın.`);
+                }
               } else {
                 MockDataService.updateTransactionStatus(txId, 'approved');
                 TelegramService.sendMessage(`✅ Sorğu #${txId} təsdiqləndi.`);
               }
             } else if (data.startsWith('reject_')) {
               const txId = data.split('_')[1];
-              TelegramService.sendMessage(`❌ <b>Sorğu #${txId}</b> rədd etmək üçün bu mesajı <b>SƏBƏB</b> yazaraq CAVABLANDIRIN (Reply).`)
-              .then(res => {
-                if (res && res.ok) {
-                  const txsFresh = MockDataService.getTransactions();
-                  const updated = txsFresh.map(t => t.id === Number(txId) ? { ...t, telegramPromptId: res.result.message_id } : t);
-                  localStorage.setItem("casino_mock_transactions", JSON.stringify(updated));
-                }
-              });
+              const txs = MockDataService.getTransactions();
+              const tx = txs.find(t => t.id === Number(txId));
+
+              if (tx && tx.lastTelegramReply) {
+                MockDataService.updateTransactionStatus(txId, 'rejected', tx.lastTelegramReply);
+                TelegramService.sendMessage(`❌ <b>Sorğu #${txId}</b> rədd edildi.\nSəbəb: ${tx.lastTelegramReply}`);
+              } else {
+                TelegramService.sendMessage(`⚠️ <b>DİQQƏT:</b> Rədd səbəbini daxil etməmisiniz.\nZəhmət olmasa əsas mesajı <b>SƏBƏB</b> yazaraq cavablandırın (Reply), sonra yenidən bu düyməni sıxın.`);
+              }
             }
           }
         });
@@ -614,14 +606,6 @@ function UserApp() {
                     className="w-full h-full border-none"
                     title="Game Window"
                 />
-                <div className="absolute bottom-6 right-6">
-                    <button 
-                        onClick={() => window.open("https://fastloto365.com", "_blank")}
-                        className="bg-amber-500 text-black px-6 py-3 rounded-2xl font-black text-xs shadow-2xl"
-                    >
-                        PENCEREDE AC
-                    </button>
-                </div>
             </div>
         </div>
       )}
