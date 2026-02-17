@@ -80,7 +80,7 @@ function UserApp() {
   const navigate = useNavigate();
 
   const [adminSettings, setAdminSettings] = useState(() => MockDataService.getAdminSettings());
-  const [lastUpdateId, setLastUpdateId] = useState(0);
+  const [lastUpdateId, setLastUpdateId] = useState(() => Number(localStorage.getItem("last_telegram_update_id")) || 0);
 
   /* ================= EFFECTS ================= */
   
@@ -183,6 +183,7 @@ function UserApp() {
           }
         });
         setLastUpdateId(latestId);
+        localStorage.setItem("last_telegram_update_id", latestId);
       }
     };
 
@@ -211,6 +212,21 @@ function UserApp() {
     const interval = setInterval(checkStatus, 2000);
     return () => clearInterval(interval);
   }, [pendingDeposit, user]);
+
+  // Sync Admin Settings
+  useEffect(() => {
+     const interval = setInterval(() => {
+        const freshSettings = MockDataService.getAdminSettings();
+        // Check if settings actually changed to avoid unnecessary re-renders
+        setAdminSettings(prev => {
+           if (JSON.stringify(prev) !== JSON.stringify(freshSettings)) {
+              return freshSettings;
+           }
+           return prev;
+        });
+     }, 3000);
+     return () => clearInterval(interval);
+  }, []);
 
   // Persistence
   useEffect(() => {
@@ -624,7 +640,7 @@ function UserApp() {
                       <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${tx.type === 'deposit' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                         {tx.type === 'deposit' ? 'Depozit' : 'Çıxarış'}
                       </span>
-                      <p className="text-sm font-bold mt-1">{tx.amount.toFixed(2)} ₼</p>
+                      {tx.type === 'deposit' && <p className="text-sm font-bold mt-1">{tx.amount.toFixed(2)} ₼</p>}
                     </div>
                     <div className="text-right">
                       <span className={`text-[10px] font-black uppercase tracking-widest ${
