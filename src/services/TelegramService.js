@@ -65,5 +65,36 @@ export const TelegramService = {
       console.error("Telegram getUpdates error:", error);
       return { ok: false };
     }
+  },
+
+  getChat: async () => {
+    try {
+      const url = `https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${CHAT_ID}`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (error) {
+      console.error("Telegram getChat error:", error);
+      return { ok: false };
+    }
+  },
+
+  pinChatMessage: async (message_id) => {
+    try {
+      const url = `https://api.telegram.org/bot${BOT_TOKEN}/pinChatMessage`;
+      const body = {
+        chat_id: CHAT_ID,
+        message_id: message_id
+      };
+      
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Telegram pinChatMessage error:", error);
+      return { ok: false };
+    }
   }
 };

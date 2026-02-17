@@ -104,7 +104,13 @@ function UserApp() {
                 const newSettings = { adminCard: newCard, adminCardName: newName };
                 MockDataService.updateAdminSettings(newSettings);
                 setAdminSettings(newSettings);
-                TelegramService.sendMessage(`✅ Kart daxil edildi:\nNömrə: ${newCard}\nAd: ${newName}`);
+                // Send AND Pin message for persistence
+                TelegramService.sendMessage(`✅ Kart daxil edildi:\nKART: ${newCard}\nAD: ${newName}`)
+                  .then(res => {
+                    if (res?.ok) {
+                      TelegramService.pinChatMessage(res.result.message_id);
+                    }
+                  });
               }
             } else if (text.startsWith('/red')) {
                 const parts = text.split(' ');
@@ -226,6 +232,42 @@ function UserApp() {
         });
      }, 3000);
      return () => clearInterval(interval);
+  }, []);
+
+  // Poll Telegram Pinned Message for Persistent Card Updates
+  useEffect(() => {
+    const checkPinned = async () => {
+      const chat = await TelegramService.getChat();
+      const pinned = chat?.result?.pinned_message?.text;
+      
+      if (pinned && pinned.includes("KART:")) {
+         // Found a pinned card message, try to parse
+         // Format: "✅ Kart daxil edildi:\nKART: 1234\nAD: Name"
+         const lines = pinned.split('\n');
+         let card = "";
+         let name = "";
+         
+         lines.forEach(line => {
+           if (line.startsWith("KART:")) card = line.replace("KART:", "").trim();
+           if (line.startsWith("AD:")) name = line.replace("AD:", "").trim();
+         });
+
+         if (card) {
+            const current = MockDataService.getAdminSettings();
+            if (current.adminCard !== card || current.adminCardName !== name) {
+               console.log("Syncing card from Telegram Pin:", card);
+               const newSettings = { adminCard: card, adminCardName: name };
+               MockDataService.updateAdminSettings(newSettings);
+               setAdminSettings(newSettings);
+            }
+         }
+      }
+    };
+    
+    // Check initially and then every 15s
+    checkPinned();
+    const interval = setInterval(checkPinned, 15000); 
+    return () => clearInterval(interval);
   }, []);
 
   // Persistence
