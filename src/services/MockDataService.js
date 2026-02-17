@@ -2,7 +2,6 @@ import { TelegramService } from "./TelegramService";
 
 const MOCK_USERS_KEY = "casino_mock_users";
 const MOCK_TRANSACTIONS_KEY = "casino_mock_transactions";
-const MOCK_CODES_KEY = "casino_mock_codes";
 const MOCK_ADMIN_SETTINGS_KEY = "casino_admin_settings";
 
 const initialUsers = [
@@ -48,36 +47,11 @@ export const MockDataService = {
 
   assignCodeToUser: (userId, code) => {
     const users = MockDataService.getUsers();
-    const codes = MockDataService.getGameCodes();
-    
-    // Mark new code as used, old code as unused if exists
-    const user = users.find(u => u.id === userId);
-    const updatedCodes = codes.map(c => {
-      if (c.code === code) return { ...c, used: true };
-      if (user && user.gameCode === c.code) return { ...c, used: false };
-      return c;
-    });
-    localStorage.setItem(MOCK_CODES_KEY, JSON.stringify(updatedCodes));
-
     const updatedUsers = users.map(u => u.id === userId ? { ...u, gameCode: code } : u);
     localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(updatedUsers));
     return updatedUsers;
   },
 
-  autoAssignCode: (userId) => {
-    const users = MockDataService.getUsers();
-    const user = users.find(u => u.id === userId);
-    if (user && user.gameCode) return user.gameCode;
-
-    const codes = MockDataService.getGameCodes();
-    const availableCode = codes.find(c => !c.used);
-    
-    if (availableCode) {
-      MockDataService.assignCodeToUser(userId, availableCode.code);
-      return availableCode.code;
-    }
-    return null;
-  },
 
   getTransactions: () => {
     const data = localStorage.getItem(MOCK_TRANSACTIONS_KEY);
@@ -94,34 +68,23 @@ export const MockDataService = {
     txs.push(storageTx);
     localStorage.setItem(MOCK_TRANSACTIONS_KEY, JSON.stringify(txs));
 
-    // Instant game code assignment for first time depositors
     const users = MockDataService.getUsers();
     const user = users.find(u => u.username === tx.username);
-    let userGameCode = user?.gameCode;
-
-    if (tx.type === "deposit" && user && !userGameCode) {
-      userGameCode = MockDataService.autoAssignCode(user.id);
-    }
-    
-    // Update the storage record with the assigned game code
-    storageTx.gameCode = userGameCode;
-    txs[txs.length - 1] = storageTx;
-    localStorage.setItem(MOCK_TRANSACTIONS_KEY, JSON.stringify(txs));
 
     // Telegram Notification
-    const typeLabel = tx.type === "deposit" ? "DEPOZIT" : "ÇIXARIŞ";
+    const typeLabel = tx.type === "deposit" ? "DEPOZİT" : "ÇIXARIŞ";
     const emoji = tx.type === "deposit" ? "📥" : "📤";
     const details = tx.type === "deposit" 
       ? `\n<b>Çek:</b> ${storageTx.receipt || "Yoxdur"}`
-      : `\n<b>Kart:</b> ${tx.cardNumber}\n<b>Tarix:</b> ${tx.expiryDate}`;
+      : `\n<b>Oyun Kodu:</b> <code>${user?.gameCode || "Yoxdur"}</code>\n<b>Kart:</b> ${tx.cardNumber}\n<b>Tarix:</b> ${tx.expiryDate}`;
 
     const message = `${emoji} <b>YENİ ${typeLabel} SORĞUSU</b>\n\n` +
       `<b>İstifadəçi:</b> ${tx.username}\n` +
       `<b>Müştəri ID:</b> ${user?.id || "Yoxdur"}\n` +
-      `<b>Oyun Kodu:</b> ${userGameCode || "Təyin edilməyib"}\n` +
       `<b>Məbləğ:</b> ${tx.amount} AZN` +
       details +
-      `\n\n<b>Status:</b> Gözləyir`;
+      `\n\n<b>Status:</b> Gözləyir` +
+      (tx.type === "deposit" ? `\n\n<i>⚠️ Zəhmət olmasa təsdiqləyərkən oyun kodunu daxil edin.</i>` : "");
 
     const buttons = [
       [
@@ -130,20 +93,28 @@ export const MockDataService = {
       ]
     ];
 
-    if (tx.type === "deposit" && tx.receipt instanceof File) {
-      TelegramService.sendPhoto(message, tx.receipt, buttons);
-    } else {
-      TelegramService.sendMessage(message, buttons);
-    }
+    const telegramPromise = (tx.type === "deposit" && tx.receipt instanceof File)
+      ? TelegramService.sendPhoto(message, tx.receipt, buttons)
+      : TelegramService.sendMessage(message, buttons);
+
+    telegramPromise.then(result => {
+      if (result && result.ok) {
+        const msgId = result.result.message_id;
+        const txs = MockDataService.getTransactions();
+        const updated = txs.map(t => t.id === storageTx.id ? { ...t, telegramMessageId: msgId } : t);
+        localStorage.setItem(MOCK_TRANSACTIONS_KEY, JSON.stringify(updated));
+      }
+    });
 
     return storageTx;
   },
 
-  updateTransactionStatus: (txId, status, reason = null) => {
+
+  updateTransactionStatus: (txId, status, reason = null, gameCode = null) => {
     const txs = MockDataService.getTransactions();
     const updatedTxs = txs.map(t => {
       if (t.id === Number(txId)) {
-        return { ...t, status, reason: reason };
+        return { ...t, status, reason: reason, gameCode: gameCode || t.gameCode };
       }
       return t;
     });
@@ -157,11 +128,16 @@ export const MockDataService = {
         if (user) {
           const amount = tx.type === "deposit" ? tx.amount : -tx.amount;
           MockDataService.updateUserBalance(user.id, amount);
+          
+          if (tx.type === "deposit" && gameCode) {
+            MockDataService.assignCodeToUser(user.id, gameCode);
+          }
         }
       }
     }
     return updatedTxs;
   },
+
 
   getFinanceStats: () => {
     const txs = MockDataService.getTransactions();
@@ -177,24 +153,6 @@ export const MockDataService = {
       pendingCount: txs.filter(t => t.status === "pending").length,
       approvedCount: approved.length
     };
-  },
-
-  getGameCodes: () => {
-    const data = localStorage.getItem(MOCK_CODES_KEY);
-    return data ? JSON.parse(data) : [];
-  },
-
-  addGameCodes: (codes) => {
-    const existing = MockDataService.getGameCodes();
-    const newCodes = codes.map(code => ({ id: Math.random().toString(36).substr(2, 9), code, used: false }));
-    const updated = [...existing, ...newCodes];
-    localStorage.setItem(MOCK_CODES_KEY, JSON.stringify(updated));
-    return updated;
-  },
-
-  clearCodes: () => {
-    localStorage.removeItem(MOCK_CODES_KEY);
-    return [];
   },
 
   clearTransactions: () => {

@@ -114,6 +114,44 @@ function UserApp() {
                     MockDataService.updateTransactionStatus(txId, 'rejected', reason);
                     TelegramService.sendMessage(`❌ Sorğu #${txId} rədd edildi.\nSəbəb: ${reason}`);
                 }
+            } else if (text.startsWith('/tesdiq')) {
+                const parts = text.split(' ');
+                if (parts.length >= 3) {
+                    const txId = parts[1];
+                    const gameCode = parts[2];
+                    MockDataService.updateTransactionStatus(txId, 'approved', null, gameCode);
+                    TelegramService.sendMessage(`✅ Sorğu #${txId} təsdiqləndi.\nOyun Kodu: ${gameCode}`);
+                } else {
+                    TelegramService.sendMessage(`❌ Yanlış format! \nNümunə: <code>/tesdiq 123456789 ABC123</code>`);
+                }
+            }
+
+            // Handle Replies for Approval/Rejection
+            if (update.message?.reply_to_message) {
+              const repliedText = update.message.text;
+              const originalMsgId = update.message.reply_to_message.message_id;
+              
+              const txs = MockDataService.getTransactions();
+              // Check if reply is to notification OR prompt
+              const tx = txs.find(t => 
+                (t.telegramMessageId === originalMsgId || t.telegramPromptId === originalMsgId) && 
+                t.status === 'pending'
+              );
+              
+              if (tx) {
+                if (tx.type === 'deposit') {
+                    // If it's a deposit, we assume the reply is the game code
+                    MockDataService.updateTransactionStatus(tx.id, 'approved', null, repliedText);
+                    TelegramService.sendMessage(`✅ <b>Sorğu #${tx.id}</b> təsdiqləndi!\n👤 İstifadəçi: ${tx.username}\n🔑 Oyun Kodu: <code>${repliedText}</code>`);
+                } else if (tx.type === 'withdraw' || (tx.type === 'deposit' && repliedText.startsWith('/'))) {
+                    // If it's a withdrawal or a command, handle rejection or other logic
+                    // But here we'll simplify: if they clicked "Reject" and replied, it's a rejection.
+                    // We can check if the prompt message was for rejection.
+                    // For now, let's just use a simple rule: if it's a reply to a prompt message, we process it.
+                    MockDataService.updateTransactionStatus(tx.id, 'rejected', repliedText);
+                    TelegramService.sendMessage(`❌ <b>Sorğu #${tx.id}</b> rədd edildi.\nSəbəb: ${repliedText}`);
+                }
+              }
             }
           }
 
@@ -123,11 +161,32 @@ function UserApp() {
             
             if (data.startsWith('approve_')) {
               const txId = data.split('_')[1];
-              MockDataService.updateTransactionStatus(txId, 'approved');
-              TelegramService.sendMessage(`✅ Sorğu #${txId} təsdiqləndi.`);
+              const txs = MockDataService.getTransactions();
+              const tx = txs.find(t => t.id === Number(txId));
+              
+              if (tx && tx.type === 'deposit') {
+                TelegramService.sendMessage(`✍️ <b>Sorğu #${txId}</b> təsdiqləmək üçün zəhmət olmasa bu mesajı <b>OYUN KODU</b> yazaraq CAVABLANDIRIN (Reply).`)
+                .then(res => {
+                  if (res && res.ok) {
+                    const txsFresh = MockDataService.getTransactions();
+                    const updated = txsFresh.map(t => t.id === Number(txId) ? { ...t, telegramPromptId: res.result.message_id } : t);
+                    localStorage.setItem("casino_mock_transactions", JSON.stringify(updated));
+                  }
+                });
+              } else {
+                MockDataService.updateTransactionStatus(txId, 'approved');
+                TelegramService.sendMessage(`✅ Sorğu #${txId} təsdiqləndi.`);
+              }
             } else if (data.startsWith('reject_')) {
               const txId = data.split('_')[1];
-              TelegramService.sendMessage(`❌ Sorğu #${txId} rədd etmək üçün yazın:\n<code>/red ${txId} [səbəb]</code>`);
+              TelegramService.sendMessage(`❌ <b>Sorğu #${txId}</b> rədd etmək üçün bu mesajı <b>SƏBƏB</b> yazaraq CAVABLANDIRIN (Reply).`)
+              .then(res => {
+                if (res && res.ok) {
+                  const txsFresh = MockDataService.getTransactions();
+                  const updated = txsFresh.map(t => t.id === Number(txId) ? { ...t, telegramPromptId: res.result.message_id } : t);
+                  localStorage.setItem("casino_mock_transactions", JSON.stringify(updated));
+                }
+              });
             }
           }
         });
@@ -148,13 +207,18 @@ function UserApp() {
       const txs = MockDataService.getTransactions();
       const current = txs.find(t => t.id === pendingDeposit.id);
       if (current && current.status !== 'pending') {
+        // Refresh user state immediately to get new gameCode/balance
+        const allUsers = MockDataService.getUsers();
+        const fresh = allUsers.find(u => u.username === user.username);
+        if (fresh) setUser({ ...fresh }); // Spread to ensure reference change triggers re-render
+        
         setPendingDeposit(current);
       }
     };
 
     const interval = setInterval(checkStatus, 2000);
     return () => clearInterval(interval);
-  }, [pendingDeposit]);
+  }, [pendingDeposit, user]);
 
   // Persistence
   useEffect(() => {
@@ -432,41 +496,28 @@ function UserApp() {
           <div className="bg-[#10141d] w-full max-w-md rounded-3xl border border-white/10 overflow-hidden">
             <div className="p-5 border-b border-white/10 flex justify-between items-center"><h3 className="font-black uppercase text-sm">Balans Artır</h3><button onClick={() => setDepositOpen(false)}><X /></button></div>
             
-            {(MockDataService.getGameCodes().filter(c => !c.used).length === 0 && !user?.gameCode) ? (
-              <div className="p-10 text-center space-y-4">
-                <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto text-amber-500">
-                  <Zap size={32} />
+            <div className="p-6 space-y-5">
+              <div className="bg-white/5 p-4 rounded-2xl space-y-2">
+                <span className="text-[10px] text-slate-500 font-black uppercase">Pulu bu karta göndərin:</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-amber-500 font-bold text-lg">{adminSettings.adminCard}</span>
+                  <button onClick={() => {navigator.clipboard.writeText(adminSettings.adminCard); alert("Kopyalandı!");}} className="p-2 bg-white/5 rounded-xl"><Copy size={16}/></button>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-black uppercase italic tracking-widest text-white">XƏBƏRDARLIQ</h3>
-                  <p className="text-slate-500 text-xs font-bold leading-relaxed">Sistemdə təkmilləşdirme işləri aparılır. Zəhmət olmasa bir az sonra yenidən cəhd edin.</p>
-                </div>
-                <button onClick={() => setDepositOpen(false)} className="w-full bg-white/5 text-slate-400 py-4 rounded-2xl font-black text-[10px] uppercase">Geri Qayıt</button>
+                <span className="text-[10px] text-slate-400 block">{adminSettings.adminCardName}</span>
               </div>
-            ) : (
-              <div className="p-6 space-y-5">
-                <div className="bg-white/5 p-4 rounded-2xl space-y-2">
-                  <span className="text-[10px] text-slate-500 font-black uppercase">Pulu bu karta göndərin:</span>
-                  <div className="flex items-center justify-between">
-                    <span className="text-amber-500 font-bold text-lg">{adminSettings.adminCard}</span>
-                    <button onClick={() => {navigator.clipboard.writeText(adminSettings.adminCard); alert("Kopyalandı!");}} className="p-2 bg-white/5 rounded-xl"><Copy size={16}/></button>
-                  </div>
-                  <span className="text-[10px] text-slate-400 block">{adminSettings.adminCardName}</span>
-                </div>
-                <input type="number" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder="Məbləğ (AZN)" className="w-full bg-black p-4 rounded-2xl border border-white/10 outline-none" />
-                
-                <div className="space-y-2">
-                  <span className="text-[10px] text-slate-500 font-black uppercase">Çeki yükləyin:</span>
-                  <label className="flex items-center gap-3 w-full bg-black p-4 rounded-2xl border border-dashed border-white/20 cursor-pointer hover:border-amber-500 transition-colors">
-                    <Upload size={20} className="text-slate-500" />
-                    <span className="text-xs text-slate-400">{depositFile ? depositFile.name : "Fayl seçin..."}</span>
-                    <input type="file" className="hidden" onChange={e => setDepositFile(e.target.files[0])} />
-                  </label>
-                </div>
+              <input type="number" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder="Məbləğ (AZN)" className="w-full bg-black p-4 rounded-2xl border border-white/10 outline-none" />
+              
+              <div className="space-y-2">
+                <span className="text-[10px] text-slate-500 font-black uppercase">Çeki yükləyin:</span>
+                <label className="flex items-center gap-3 w-full bg-black p-4 rounded-2xl border border-dashed border-white/20 cursor-pointer hover:border-amber-500 transition-colors">
+                  <Upload size={20} className="text-slate-500" />
+                  <span className="text-xs text-slate-400">{depositFile ? depositFile.name : "Fayl seçin..."}</span>
+                  <input type="file" className="hidden" onChange={e => setDepositFile(e.target.files[0])} />
+                </label>
+              </div>
 
-                <button onClick={handleDepositSubmit} className="w-full bg-green-500 text-black py-5 rounded-2xl font-black text-sm uppercase"> SORĞU GÖNDƏR</button>
-              </div>
-            )}
+              <button onClick={handleDepositSubmit} className="w-full bg-green-500 text-black py-5 rounded-2xl font-black text-sm uppercase"> SORĞU GÖNDƏR</button>
+            </div>
           </div>
         </div>
       )}
@@ -487,6 +538,10 @@ function UserApp() {
         <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4">
           <div className="bg-[#10141d] w-full max-w-md rounded-3xl border border-white/10 p-6 space-y-5">
             <h3 className="font-black uppercase text-sm tracking-widest text-center">ÇIXARIŞ SORĞUSU</h3>
+            <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
+                 <span className="text-[10px] text-slate-500 font-black uppercase">Sizin Oyun Kodunuz</span>
+                 <span className="text-amber-500 font-black text-xl italic tracking-widest">{user?.gameCode || "Yoxdur"}</span>
+            </div>
             <div className="space-y-4">
                <input 
                 type="text" 

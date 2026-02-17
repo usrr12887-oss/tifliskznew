@@ -16,7 +16,7 @@ export default function TransactionManager() {
   }, []);
 
   const handleStatusChange = (txId, status) => {
-    const updated = MockDataService.updateTransactionStatus(txId, status);
+    const updated = MockDataService.updateTransactionStatus(txId, status, null, null);
     setTransactions(updated);
   };
 
@@ -41,6 +41,7 @@ export default function TransactionManager() {
               <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Məbləğ</th>
               <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Tarix</th>
               <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Status</th>
+              <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Kod</th>
               <th className="p-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Hərəkət</th>
             </tr>
           </thead>
@@ -86,6 +87,11 @@ export default function TransactionManager() {
                          tx.status === 'approved' ? 'TƏSDİQLƏNDİ' : 'RƏDD EDİLDİ'}
                       </span>
                    </div>
+                </td>
+                <td className="p-6">
+                   <p className="text-[11px] font-mono font-bold text-amber-500 px-2 py-1 bg-amber-500/10 rounded-lg w-fit">
+                     {tx.gameCode || "-"}
+                   </p>
                 </td>
                 <td className="p-6 text-right">
                    {tx.status === 'pending' && (

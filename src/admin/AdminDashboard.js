@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Users, CreditCard, Settings, LayoutDashboard, LogOut, ChevronRight } from "lucide-react";
 import UserManager from "./UserManager";
 import TransactionManager from "./TransactionManager";
-import CodeManager from "./CodeManager";
 import FinanceManager from "./FinanceManager";
 import { MockDataService } from "../services/MockDataService";
 
@@ -27,7 +26,6 @@ export default function AdminDashboard() {
     { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
     { id: "users", label: "İstifadəçilər", icon: <Users size={20} /> },
     { id: "transactions", label: "Əməliyyatlar", icon: <CreditCard size={20} /> },
-    { id: "codes", label: "Oyun Kodları", icon: <CreditCard size={20} /> },
     { id: "finance", label: "Maliyyə", icon: <CreditCard size={20} /> },
     { id: "settings", label: "Ayarlar", icon: <Settings size={20} /> },
   ];
@@ -103,7 +101,6 @@ export default function AdminDashboard() {
 
         {activeTab === "users" && <UserManager />}
         {activeTab === "transactions" && <TransactionManager />}
-        {activeTab === "codes" && <CodeManager />}
         {activeTab === "finance" && <FinanceManager />}
         {activeTab === "settings" && (
           <div className="p-10 text-center text-slate-500 italic">Settings component coming soon...</div>

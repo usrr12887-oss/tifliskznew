@@ -50,6 +50,7 @@ export const TelegramService = {
       if (!result.ok) {
         console.error("Telegram API Error:", result.description);
       }
+      return result;
     } catch (error) {
       console.error("Telegram photo error:", error);
     }
