@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { MockDataService } from "../services/MockDataService";
+import { ApiService } from "../services/ApiService";
 import { Plus, Trash2, Key, Users, X } from "lucide-react";
+
+async function fetchUsers() {
+  try {
+    const list = await ApiService.getUsers();
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return MockDataService.getUsers();
+  }
+}
 
 export default function CodeManager() {
   const [codes, setCodes] = useState([]);
@@ -10,7 +20,7 @@ export default function CodeManager() {
 
   useEffect(() => {
     setCodes(MockDataService.getGameCodes());
-    setUsers(MockDataService.getUsers());
+    fetchUsers().then(setUsers);
   }, []);
 
   const handleBulkAdd = () => {
@@ -23,9 +33,15 @@ export default function CodeManager() {
     alert(`${codeList.length} oyun kodu əlavə edildi.`);
   };
 
-  const handleAssign = (userId, code) => {
-    const updated = MockDataService.assignCodeToUser(userId, code);
-    setUsers(updated);
+  const handleAssign = async (userId, code) => {
+    try {
+      await ApiService.assignCodeToUser(userId, code);
+      const list = await fetchUsers();
+      setUsers(list);
+    } catch {
+      const updated = MockDataService.assignCodeToUser(userId, code);
+      setUsers(updated);
+    }
     alert("Kod istifadəçiyə təyin edildi.");
   };
 

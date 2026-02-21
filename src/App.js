@@ -1,46 +1,254 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import {
-  Menu, X, Home, Wallet, ArrowDownLeft, ArrowUpRight, Search,
-  CreditCard, Upload, Copy, Info, CheckCircle, Users, ShieldCheck,
-  Zap, Clock
+  Menu,
+  X,
+  Home,
+  Wallet,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Search,
+  CreditCard,
+  Upload,
+  Copy,
+  Info,
+  CheckCircle,
+  Users,
+  ShieldCheck,
+  Zap,
+  Clock,
 } from "lucide-react";
 import AdminDashboard from "./admin/AdminDashboard";
 import { MockDataService } from "./services/MockDataService";
+import { ApiService } from "./services/ApiService";
 import { TelegramService } from "./services/TelegramService";
 
 /* ================= OYUNLAR DATA ================= */
 const CASINO_IMAGES = [
-  { id: 1, title: "Rich Fruits", category: "slots", img: "/images/rich-fruits.png" },
-  { id: 2, title: "Sevens on Fire", category: "slots", img: "/images/sevens-on-fire.png" },
-  { id: 3, title: "Hot Sevens", category: "slots", img: "/images/hot-sevens.png" },
-  { id: 4, title: "Fire Rage", category: "slots", img: "/images/fire-rage.png" },
-  { id: 5, title: "Extra Super 7", category: "slots", img: "/images/extra-super-7.png" },
-  { id: 6, title: "Sizzling Hot", category: "slots", img: "/images/sizzling-hot.png" },
-  { id: 7, title: "Golden Scatter", category: "crash", img: "/images/golden-scatter.png" },
-  { id: 8, title: "Hot Sevens Extreme", category: "slots", img: "/images/hot-sevens-extreme.png" },
-  { id: 9, title: "Lady Luck", category: "classic", img: "/images/lady-luck.png" },
-  { id: 10, title: "Ultra 7 Hot", category: "slots", img: "/images/ultra-7-hot.png" },
-  { id: 11, title: "Always Cherry", category: "slots", img: "/images/always-cherry.png" },
-  { id: 12, title: "Aztec Century", category: "slots", img: "/images/aztec-century.png" },
-  { id: 13, title: "Hot Slot", category: "slots", img: "/images/hot-slot.png" },
-  { id: 14, title: "Fortune Star", category: "slots", img: "/images/fortune-star.png" },
-  { id: 15, title: "Simple Diamond", category: "slots", img: "/images/simple-diamond.png" },
-  { id: 16, title: "Joker's Fruit", category: "slots", img: "/images/jokers-fruit.png" },
-  { id: 17, title: "Hit Jewels", category: "slots", img: "/images/hit-jewels.png" },
-  { id: 18, title: "King of Jewels", category: "classic", img: "/images/king-of-jewels.png" },
-  { id: 19, title: "Roll of Ramses", category: "slots", img: "/images/roll-of-ramses.jpg" },
-  { id: 20, title: "Scatter Wins", category: "slots", img: "/images/scatter-wins.png" },
-  { id: 21, title: "Tropical Fruits", category: "slots", img: "/images/tropical-fruits.png" },
+  {
+    id: 1,
+    title: "Rich Fruits",
+    category: "slots",
+    img: "images/rich-fruits.png",
+  },
+  {
+    id: 2,
+    title: "Sevens on Fire",
+    category: "slots",
+    img: "images/sevens-on-fire.png",
+  },
+  {
+    id: 3,
+    title: "Hot Sevens",
+    category: "slots",
+    img: "images/hot-sevens.png",
+  },
+  { id: 4, title: "Fire Rage", category: "slots", img: "images/fire-rage.png" },
+  {
+    id: 5,
+    title: "Extra Super 7",
+    category: "slots",
+    img: "images/extra-super-7.png",
+  },
+  {
+    id: 6,
+    title: "Sizzling Hot",
+    category: "slots",
+    img: "images/sizzling-hot.png",
+  },
+  {
+    id: 7,
+    title: "Golden Scatter",
+    category: "slots",
+    img: "images/golden-scatter2.png",
+  },
+  {
+    id: 8,
+    title: "Hot Sevens Extreme",
+    category: "slots",
+    img: "images/hot-sevens-extreme.png",
+  },
+  {
+    id: 9,
+    title: "Lady Luck",
+    category: "classic",
+    img: "images/lady-luck.png",
+  },
+  {
+    id: 10,
+    title: "Ultra 7 Hot",
+    category: "slots",
+    img: "images/ultra-7-hot.png",
+  },
+  {
+    id: 11,
+    title: "Always Cherry",
+    category: "slots",
+    img: "images/always-cherry.png",
+  },
+  {
+    id: 12,
+    title: "Aztec Century",
+    category: "slots",
+    img: "images/aztec-century.png",
+  },
+  { id: 13, title: "Hot Slot", category: "slots", img: "images/hot-slot.png" },
+  {
+    id: 14,
+    title: "Fortune Star",
+    category: "slots",
+    img: "images/fortune-star.png",
+  },
+  {
+    id: 15,
+    title: "Simple Diamond",
+    category: "slots",
+    img: "images/simple-diamond.png",
+  },
+  {
+    id: 16,
+    title: "Joker's Fruit",
+    category: "slots",
+    img: "images/jokers-fruit.png",
+  },
+  {
+    id: 17,
+    title: "Hit Jewels",
+    category: "slots",
+    img: "images/hit-jewels.png",
+  },
+  {
+    id: 18,
+    title: "King of Jewels",
+    category: "classic",
+    img: "images/king-of-jewels.png",
+  },
+  {
+    id: 19,
+    title: "Roll of Ramses",
+    category: "slots",
+    img: "images/roll-of-ramses.jpg",
+  },
+  {
+    id: 20,
+    title: "Scatter Wins",
+    category: "slots",
+    img: "images/scatter-wins.png",
+  },
+  {
+    id: 21,
+    title: "Tropical Fruits",
+    category: "slots",
+    img: "images/tropical-fruits.png",
+  },
+  {
+    id: 22,
+    title: "Blackjack",
+    category: "classic",
+    img: "images/blackjack.png",
+  },
+  {
+    id: 23,
+    title: "Box of Ra",
+    category: "slots",
+    img: "images/box-of-ra.png",
+  },
+  { id: 24, title: "Bananas", category: "slots", img: "images/bananas.png" },
+  {
+    id: 25,
+    title: "Book of Sphinx",
+    category: "slots",
+    img: "images/book-of-sphinx.png",
+  },
+  {
+    id: 26,
+    title: "Book of Winners",
+    category: "slots",
+    img: "images/book-of-winners.png",
+  },
+  { id: 27, title: "Captain", category: "slots", img: "images/captain.png" },
+  {
+    id: 28,
+    title: "Computer World",
+    category: "slots",
+    img: "images/computer-world.png",
+  },
+  {
+    id: 29,
+    title: "Crazy Barmen",
+    category: "slots",
+    img: "images/crazy-barmen.png",
+  },
+  {
+    id: 30,
+    title: "Dolphin Shell",
+    category: "slots",
+    img: "images/dolphin-shell.png",
+  },
+  {
+    id: 31,
+    title: "European Roulette Network",
+    category: "classic",
+    img: "images/european-roulette-network.png",
+  },
+  {
+    id: 32,
+    title: "European Roulette",
+    category: "classic",
+    img: "images/european-roulette.png",
+  },
+  {
+    id: 33,
+    title: "Fortune Wheel",
+    category: "slots",
+    img: "images/fortune-wheel.png",
+  },
+  {
+    id: 34,
+    title: "Fortune Wheel Network",
+    category: "slots",
+    img: "images/fortune-wheel-network.png",
+  },
+  {
+    id: 35,
+    title: "Gates of Avalon",
+    category: "slots",
+    img: "images/gates-of-avalon.png",
+  },
+  {
+    id: 36,
+    title: "Golden Harvest",
+    category: "slots",
+    img: "images/golden-harvest.png",
+  },
+  { id: 37, title: "Hearts", category: "slots", img: "images/hearts.png" },
+  {
+    id: 38,
+    title: "Money Lotto",
+    category: "slots",
+    img: "images/money-lotto.png",
+  },
 ];
 
 const CATEGORIES = [
-  { id: "all", label: "Hamısı", icon: <Zap size={18}/> },
-  { id: "slots", label: "Slotlar", icon: < Zap size={18}/> },
-  { id: "crash", label: "Crash", icon: < Zap size={18}/> },
-  { id: "classic", label: "Klassik", icon: < Zap size={18}/> },
-  { id: "live", label: "Canlı", icon: < Zap size={18}/> },
+  { id: "all", label: "Hamısı", icon: <Zap size={18} /> },
+  { id: "slots", label: "Slotlar", icon: <Zap size={18} /> },
+  { id: "crash", label: "Crash", icon: <Zap size={18} /> },
+  { id: "classic", label: "Klassik", icon: <Zap size={18} /> },
+  { id: "live", label: "Canlı", icon: <Zap size={18} /> },
 ];
+
+const WHEEL_SEGMENTS = [
+  "1000 ₼",
+  "500 ₼",
+  "100 ₼",
+  "50 ₼",
+  "100% bonus",
+  "50% bonus",
+  "20% bonus",
+  "10% bonus",
+];
+const WHEEL_WINNABLE_INDICES = [6, 7];
 
 function UserApp() {
   /* --- UI & AUTH STATES --- */
@@ -60,7 +268,11 @@ function UserApp() {
   const [smallJP, setSmallJP] = useState(320);
   const [mediumJP, setMediumJP] = useState(820);
   const [bigJP, setBigJP] = useState(1520);
-  const [liveWin, setLiveWin] = useState({ name: "Kamran", game: "Aviator", amount: 125 });
+  const [liveWin, setLiveWin] = useState({
+    name: "Kamran",
+    game: "Aviator",
+    amount: 125,
+  });
 
   /* --- MODALS & FORMS STATES --- */
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,7 +281,7 @@ function UserApp() {
   const [transactionsOpen, setTransactionsOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [depositFile, setDepositFile] = useState(null);
-  
+
   const [withdrawCard, setWithdrawCard] = useState("");
   const [withdrawExpiry, setWithdrawExpiry] = useState("");
 
@@ -77,79 +289,129 @@ function UserApp() {
   const [currentGameCode, setCurrentGameCode] = useState("");
   const [pendingDeposit, setPendingDeposit] = useState(null);
 
+  const [wheelOpen, setWheelOpen] = useState(false);
+  const [wheelSpinning, setWheelSpinning] = useState(false);
+  const [wheelRotation, setWheelRotation] = useState(0);
+  const [wheelResult, setWheelResult] = useState(null);
+
   const navigate = useNavigate();
 
-  const [adminSettings, setAdminSettings] = useState(() => MockDataService.getAdminSettings());
-  const [lastUpdateId, setLastUpdateId] = useState(() => Number(localStorage.getItem("last_telegram_update_id")) || 0);
+  const [adminSettings, setAdminSettings] = useState(() =>
+    MockDataService.getAdminSettings(),
+  );
+  const [lastUpdateId, setLastUpdateId] = useState(
+    () => Number(localStorage.getItem("last_telegram_update_id")) || 0,
+  );
 
   /* ================= EFFECTS ================= */
-  
+
   // Telegram Command & Callback Polling
   useEffect(() => {
     const pollTelegram = async () => {
       const updates = await TelegramService.getUpdates(lastUpdateId + 1);
       if (updates.ok && updates.result.length > 0) {
         let latestId = lastUpdateId;
-        updates.result.forEach(update => {
+        updates.result.forEach((update) => {
           latestId = update.update_id;
-          
+
           // Handle Commands (/kart, /red)
           const text = update.message?.text;
           if (text) {
-            if (text.startsWith('/kart')) {
-              const parts = text.split(' ');
+            if (text.startsWith("/kart")) {
+              const parts = text.split(" ");
               if (parts.length >= 2) {
                 const newCard = parts[1];
-                const newName = parts.slice(2).join(' ') || "Tiflis Kazino Admin";
-                const newSettings = { adminCard: newCard, adminCardName: newName };
+                const newName =
+                  parts.slice(2).join(" ") || "Tiflis Kazino Admin";
+                const newSettings = {
+                  adminCard: newCard,
+                  adminCardName: newName,
+                };
                 MockDataService.updateAdminSettings(newSettings);
                 setAdminSettings(newSettings);
                 // Send AND Pin message for persistence
-                TelegramService.sendMessage(`✅ Kart daxil edildi:\nKART: ${newCard}\nAD: ${newName}`)
-                  .then(res => {
-                    if (res?.ok) {
-                      TelegramService.pinChatMessage(res.result.message_id);
-                    }
-                  });
+                TelegramService.sendMessage(
+                  `✅ Kart daxil edildi:\nKART: ${newCard}\nAD: ${newName}`,
+                ).then((res) => {
+                  if (res?.ok) {
+                    TelegramService.pinChatMessage(res.result.message_id);
+                  }
+                });
               }
-            } else if (text.startsWith('/red')) {
-                const parts = text.split(' ');
-                if (parts.length >= 3) {
-                    const txId = parts[1];
-                    const reason = parts.slice(2).join(' ');
-                    MockDataService.updateTransactionStatus(txId, 'rejected', reason);
-                    TelegramService.sendMessage(`❌ Sorğu #${txId} rədd edildi.\nSəbəb: ${reason}`);
-                }
-            } else if (text.startsWith('/tesdiq')) {
-                const parts = text.split(' ');
-                if (parts.length >= 3) {
-                    const txId = parts[1];
-                    const gameCode = parts[2];
-                    MockDataService.updateTransactionStatus(txId, 'approved', null, gameCode);
-                    TelegramService.sendMessage(`✅ Sorğu #${txId} təsdiqləndi.\nOyun Kodu: ${gameCode}`);
-                } else {
-                    TelegramService.sendMessage(`❌ Yanlış format! \nNümunə: <code>/tesdiq 123456789 ABC123</code>`);
-                }
+            } else if (text.startsWith("/red")) {
+              const parts = text.split(" ");
+              if (parts.length >= 3) {
+                const txId = parts[1];
+                const reason = parts.slice(2).join(" ");
+                MockDataService.updateTransactionStatus(
+                  txId,
+                  "rejected",
+                  reason,
+                );
+                ApiService.updateTransaction(
+                  Number(txId),
+                  "rejected",
+                  reason,
+                  null,
+                ).catch(() => {});
+                TelegramService.sendMessage(
+                  `❌ Sorğu #${txId} rədd edildi.\nSəbəb: ${reason}`,
+                );
+              }
+            } else if (text.startsWith("/tesdiq")) {
+              const parts = text.split(" ");
+              if (parts.length >= 3) {
+                const txId = parts[1];
+                const gameCode = parts[2];
+                MockDataService.updateTransactionStatus(
+                  txId,
+                  "approved",
+                  null,
+                  gameCode,
+                );
+                ApiService.updateTransaction(
+                  Number(txId),
+                  "approved",
+                  null,
+                  gameCode,
+                ).catch(() => {});
+                TelegramService.sendMessage(
+                  `✅ Sorğu #${txId} təsdiqləndi.\nOyun Kodu: ${gameCode}`,
+                );
+              } else {
+                TelegramService.sendMessage(
+                  `❌ Yanlış format! \nNümunə: <code>/tesdiq 123456789 ABC123</code>`,
+                );
+              }
             }
 
             // Handle Replies for Approval/Rejection
             if (update.message?.reply_to_message) {
               const repliedText = update.message.text;
               const originalMsgId = update.message.reply_to_message.message_id;
-              
+
               const txs = MockDataService.getTransactions();
-              // Check if reply is to notification 
-              const tx = txs.find(t => 
-                (t.telegramMessageId === originalMsgId || t.telegramPromptId === originalMsgId) && 
-                t.status === 'pending'
+              // Check if reply is to notification
+              const tx = txs.find(
+                (t) =>
+                  (t.telegramMessageId === originalMsgId ||
+                    t.telegramPromptId === originalMsgId) &&
+                  t.status === "pending",
               );
-              
-              if (tx && tx.status === 'pending') {
+
+              if (tx && tx.status === "pending") {
                 // Store reply in transaction state
                 const txsFull = MockDataService.getTransactions();
-                const updated = txsFull.map(t => t.id === tx.id ? { ...t, lastTelegramReply: repliedText } : t);
-                localStorage.setItem("casino_mock_transactions", JSON.stringify(updated));
-                TelegramService.sendMessage(`✍️ <b>Sorğu #${tx.id}</b> üçün mətn qəbul edildi: "<i>${repliedText}</i>"\nİndi təsdiqləmək və ya ləğv etmək üçün yuxarıdakı düymələri sıxa bilərsiniz.`);
+                const updated = txsFull.map((t) =>
+                  t.id === tx.id ? { ...t, lastTelegramReply: repliedText } : t,
+                );
+                localStorage.setItem(
+                  "casino_mock_transactions",
+                  JSON.stringify(updated),
+                );
+                TelegramService.sendMessage(
+                  `✍️ <b>Sorğu #${tx.id}</b> üçün mətn qəbul edildi: "<i>${repliedText}</i>"\nİndi təsdiqləmək və ya ləğv etmək üçün yuxarıdakı düymələri sıxa bilərsiniz.`,
+                );
               }
             }
           }
@@ -157,33 +419,68 @@ function UserApp() {
           // Handle Callback Queries (Buttons)
           if (update.callback_query) {
             const data = update.callback_query.data;
-            
-            if (data.startsWith('approve_')) {
-              const txId = data.split('_')[1];
+
+            if (data.startsWith("approve_")) {
+              const txId = data.split("_")[1];
               const txs = MockDataService.getTransactions();
-              const tx = txs.find(t => t.id === Number(txId));
-              
-              if (tx && tx.type === 'deposit') {
+              const tx = txs.find((t) => t.id === Number(txId));
+
+              if (tx && tx.type === "deposit") {
                 if (tx.lastTelegramReply) {
-                  MockDataService.updateTransactionStatus(txId, 'approved', null, tx.lastTelegramReply);
-                  TelegramService.sendMessage(`✅ <b>Sorğu #${txId}</b> təsdiqləndi.\n🔑 Oyun Kodu: <code>${tx.lastTelegramReply}</code>`);
+                  MockDataService.updateTransactionStatus(
+                    txId,
+                    "approved",
+                    null,
+                    tx.lastTelegramReply,
+                  );
+                  ApiService.updateTransaction(
+                    Number(txId),
+                    "approved",
+                    null,
+                    tx.lastTelegramReply,
+                  ).catch(() => {});
+                  TelegramService.sendMessage(
+                    `✅ <b>Sorğu #${txId}</b> təsdiqləndi.\n🔑 Oyun Kodu: <code>${tx.lastTelegramReply}</code>`,
+                  );
                 } else {
-                  TelegramService.sendMessage(`⚠️ <b>DİQQƏT:</b> Oyun kodunu daxil etməmisiniz.\nZəhmət olmasa əsas mesajı <b>OYUN KODU</b> yazaraq cavablandırın (Reply), sonra yenidən bu düyməni sıxın.`);
+                  TelegramService.sendMessage(
+                    `⚠️ <b>DİQQƏT:</b> Oyun kodunu daxil etməmisiniz.\nZəhmət olmasa əsas mesajı <b>OYUN KODU</b> yazaraq cavablandırın (Reply), sonra yenidən bu düyməni sıxın.`,
+                  );
                 }
               } else {
-                MockDataService.updateTransactionStatus(txId, 'approved');
+                MockDataService.updateTransactionStatus(txId, "approved");
+                ApiService.updateTransaction(
+                  Number(txId),
+                  "approved",
+                  null,
+                  null,
+                ).catch(() => {});
                 TelegramService.sendMessage(`✅ Sorğu #${txId} təsdiqləndi.`);
               }
-            } else if (data.startsWith('reject_')) {
-              const txId = data.split('_')[1];
+            } else if (data.startsWith("reject_")) {
+              const txId = data.split("_")[1];
               const txs = MockDataService.getTransactions();
-              const tx = txs.find(t => t.id === Number(txId));
+              const tx = txs.find((t) => t.id === Number(txId));
 
               if (tx && tx.lastTelegramReply) {
-                MockDataService.updateTransactionStatus(txId, 'rejected', tx.lastTelegramReply);
-                TelegramService.sendMessage(`❌ <b>Sorğu #${txId}</b> rədd edildi.\nSəbəb: ${tx.lastTelegramReply}`);
+                MockDataService.updateTransactionStatus(
+                  txId,
+                  "rejected",
+                  tx.lastTelegramReply,
+                );
+                ApiService.updateTransaction(
+                  Number(txId),
+                  "rejected",
+                  tx.lastTelegramReply,
+                  null,
+                ).catch(() => {});
+                TelegramService.sendMessage(
+                  `❌ <b>Sorğu #${txId}</b> rədd edildi.\nSəbəb: ${tx.lastTelegramReply}`,
+                );
               } else {
-                TelegramService.sendMessage(`⚠️ <b>DİQQƏT:</b> Rədd səbəbini daxil etməmisiniz.\nZəhmət olmasa əsas mesajı <b>SƏBƏB</b> yazaraq cavablandırın (Reply), sonra yenidən bu düyməni sıxın.`);
+                TelegramService.sendMessage(
+                  `⚠️ <b>DİQQƏT:</b> Rədd səbəbini daxil etməmisiniz.\nZəhmət olmasa əsas mesajı <b>SƏBƏB</b> yazaraq cavablandırın (Reply), sonra yenidən bu düyməni sıxın.`,
+                );
               }
             }
           }
@@ -193,24 +490,36 @@ function UserApp() {
       }
     };
 
-    const interval = setInterval(pollTelegram, 5000); 
+    const interval = setInterval(pollTelegram, 5000);
     return () => clearInterval(interval);
   }, [lastUpdateId]);
 
-  // Track Pending Deposit Status
+  // Track Pending Deposit Status (local + API so admin approval on server is seen)
   useEffect(() => {
-    if (!pendingDeposit) return;
-    if (pendingDeposit.status !== 'pending') return;
+    if (!pendingDeposit || !user) return;
+    if (pendingDeposit.status !== "pending") return;
 
-    const checkStatus = () => {
-      const txs = MockDataService.getTransactions();
-      const current = txs.find(t => t.id === pendingDeposit.id);
-      if (current && current.status !== 'pending') {
-        // Refresh user state immediately to get new gameCode/balance
-        const allUsers = MockDataService.getUsers();
-        const fresh = allUsers.find(u => u.username === user.username);
-        if (fresh) setUser({ ...fresh }); // Spread to ensure reference change triggers re-render
-        
+    const checkStatus = async () => {
+      let current = null;
+      try {
+        const txs = await ApiService.getTransactions();
+        current = txs.find((t) => t.id === pendingDeposit.id);
+      } catch {
+        const txs = MockDataService.getTransactions();
+        current = txs.find((t) => t.id === pendingDeposit.id);
+      }
+      if (current && current.status !== "pending") {
+        try {
+          const allUsers = await ApiService.getUsers();
+          const fresh =
+            Array.isArray(allUsers) &&
+            allUsers.find((u) => u.username === user.username);
+          if (fresh) setUser({ ...fresh });
+        } catch {
+          const allUsers = MockDataService.getUsers();
+          const fresh = allUsers.find((u) => u.username === user.username);
+          if (fresh) setUser({ ...fresh });
+        }
         setPendingDeposit(current);
       }
     };
@@ -221,52 +530,58 @@ function UserApp() {
 
   // Sync Admin Settings
   useEffect(() => {
-     const interval = setInterval(() => {
-        const freshSettings = MockDataService.getAdminSettings();
-        // Check if settings actually changed to avoid unnecessary re-renders
-        setAdminSettings(prev => {
-           if (JSON.stringify(prev) !== JSON.stringify(freshSettings)) {
-              return freshSettings;
-           }
-           return prev;
-        });
-     }, 3000);
-     return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      const freshSettings = MockDataService.getAdminSettings();
+      // Check if settings actually changed to avoid unnecessary re-renders
+      setAdminSettings((prev) => {
+        if (JSON.stringify(prev) !== JSON.stringify(freshSettings)) {
+          return freshSettings;
+        }
+        return prev;
+      });
+    }, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   // Poll Telegram Pinned Message for Persistent Card Updates
   useEffect(() => {
     const checkPinned = async () => {
-      const chat = await TelegramService.getChat();
-      const pinned = chat?.result?.pinned_message?.text;
-      
-      if (pinned && pinned.includes("KART:")) {
-         // Found a pinned card message, try to parse
-         // Format: "✅ Kart daxil edildi:\nKART: 1234\nAD: Name"
-         const lines = pinned.split('\n');
-         let card = "";
-         let name = "";
-         
-         lines.forEach(line => {
-           if (line.startsWith("KART:")) card = line.replace("KART:", "").trim();
-           if (line.startsWith("AD:")) name = line.replace("AD:", "").trim();
-         });
+      try {
+        const chat = await TelegramService.getChat();
+        if (chat?.ok && chat.result?.pinned_message?.text) {
+          const pinnedText = chat.result.pinned_message.text;
+          console.log("Checking pinned message:", pinnedText);
 
-         if (card) {
+          // We look for patterns like "KART: <value>" or "Kart: <value>"
+          // Regex to capture value after "KART:" or "Kart:" (case insensitive)
+          // It handles optional whitespace around the colon.
+          const cardMatch = pinnedText.match(/KART\s*:\s*(.+)/i);
+          const nameMatch = pinnedText.match(/AD\s*:\s*(.+)/i);
+
+          if (cardMatch && cardMatch[1]) {
+            const card = cardMatch[1].trim();
+            const name =
+              nameMatch && nameMatch[1] ? nameMatch[1].trim() : "Admin";
+
             const current = MockDataService.getAdminSettings();
+
+            // Update if different
             if (current.adminCard !== card || current.adminCardName !== name) {
-               console.log("Syncing card from Telegram Pin:", card);
-               const newSettings = { adminCard: card, adminCardName: name };
-               MockDataService.updateAdminSettings(newSettings);
-               setAdminSettings(newSettings);
+              console.log("Syncing card from Telegram Pin:", card, name);
+              const newSettings = { adminCard: card, adminCardName: name };
+              MockDataService.updateAdminSettings(newSettings);
+              setAdminSettings(newSettings);
             }
-         }
+          }
+        }
+      } catch (err) {
+        console.error("Error polling pinned message:", err);
       }
     };
-    
-    // Check initially and then every 15s
+
+    // Check initially and then every 5s for faster updates
     checkPinned();
-    const interval = setInterval(checkPinned, 15000); 
+    const interval = setInterval(checkPinned, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -276,7 +591,7 @@ function UserApp() {
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
       const allUsers = MockDataService.getUsers();
-      const fresh = allUsers.find(u => u.username === parsed.username);
+      const fresh = allUsers.find((u) => u.username === parsed.username);
       if (fresh) setUser(fresh);
     }
   }, []);
@@ -285,7 +600,7 @@ function UserApp() {
     if (user) {
       localStorage.setItem("casino_current_user", JSON.stringify(user));
       const users = MockDataService.getUsers();
-      const currentUser = users.find(u => u.username === user.username);
+      const currentUser = users.find((u) => u.username === user.username);
       if (currentUser) {
         setBalance(currentUser.balance || 0);
         setCurrentGameCode(currentUser.gameCode || "");
@@ -303,16 +618,78 @@ function UserApp() {
   }, [user]);
 
   useEffect(() => {
-    const names = ["Elvin", "Leyla", "Murad", "Aysel", "Samir", "Rəşad", "Zaur", "Fidan", "Orxan", "Günel", "Vüsal", "Nigar", "Anar", "Nərmin", "Emin", "Sevinc", "İlqar", "Könül", "Rauf", "Arzu", "Tural", "Aytən", "Elnur", "Lalə", "Pərviz", "Gülşən", "Ceyhun", "Fəridə", "Ramil", "Səbinə", "Fuad", "Nailə", "Kamran", "Zeynəb", "Ayxan", "Aydan", "Nicat", "Məryəm", "Aqil", "Türkan", "Şahin", "Nisə", "Rüstəm", "Validə", "Tahir", "Nuranə", "Eldar", "Fidan", "Fariz", "Səid"];
-    const games = ["Rich Fruits", "Hot Sevens", "Lady Luck", "Sevens on Fire", "Roulette", "Sizzling Hot", "Fire Rage", "Extra Super 7"];
-    
+    const names = [
+      "Elvin",
+      "Leyla",
+      "Murad",
+      "Aysel",
+      "Samir",
+      "Rəşad",
+      "Zaur",
+      "Fidan",
+      "Orxan",
+      "Günel",
+      "Vüsal",
+      "Nigar",
+      "Anar",
+      "Nərmin",
+      "Emin",
+      "Sevinc",
+      "İlqar",
+      "Könül",
+      "Rauf",
+      "Arzu",
+      "Tural",
+      "Aytən",
+      "Elnur",
+      "Lalə",
+      "Pərviz",
+      "Gülşən",
+      "Ceyhun",
+      "Fəridə",
+      "Ramil",
+      "Səbinə",
+      "Fuad",
+      "Nailə",
+      "Kamran",
+      "Zeynəb",
+      "Ayxan",
+      "Aydan",
+      "Nicat",
+      "Məryəm",
+      "Aqil",
+      "Türkan",
+      "Şahin",
+      "Nisə",
+      "Rüstəm",
+      "Validə",
+      "Tahir",
+      "Nuranə",
+      "Eldar",
+      "Fidan",
+      "Fariz",
+      "Səid",
+    ];
+    const games = [
+      "Rich Fruits",
+      "Hot Sevens",
+      "Lady Luck",
+      "Sevens on Fire",
+      "Roulette",
+      "Sizzling Hot",
+      "Fire Rage",
+      "Extra Super 7",
+    ];
+
     const interval = setInterval(() => {
       const isBigWin = Math.random() > 0.8;
-      const amount = isBigWin ? Math.floor(Math.random() * 4000) + 1000 : Math.floor(Math.random() * 800) + 100;
+      const amount = isBigWin
+        ? Math.floor(Math.random() * 4000) + 1000
+        : Math.floor(Math.random() * 800) + 100;
       setLiveWin({
         name: names[Math.floor(Math.random() * names.length)],
         game: games[Math.floor(Math.random() * games.length)],
-        amount: amount
+        amount: amount,
       });
     }, 4000);
     return () => clearInterval(interval);
@@ -320,77 +697,141 @@ function UserApp() {
 
   const filteredGames = useMemo(() => {
     return CASINO_IMAGES.filter((g) => {
-      const matchesSearch = g.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = activeCategory === "all" || g.category === activeCategory;
+      const matchesSearch = g.title
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        activeCategory === "all" || g.category === activeCategory;
       return matchesSearch && matchesCategory;
     });
   }, [searchQuery, activeCategory]);
 
-  const handleDepositSubmit = () => {
-    if (!depositAmount || depositAmount <= 0) return alert("Məbləği daxil edin.");
+  const handleDepositSubmit = async () => {
+    if (!depositAmount || depositAmount <= 0)
+      return alert("Məbləği daxil edin.");
     if (!depositFile) return alert("Zəhmət olmasa çeki (skrinşot) yükləyin.");
-    
+
     const newTx = MockDataService.addTransaction({
       username: user.username,
       amount: parseFloat(depositAmount),
       type: "deposit",
-      receipt: depositFile // Pass actual file object
+      receipt: depositFile,
     });
-    
+    try {
+      const res = await ApiService.addTransaction({
+        username: user.username,
+        amount: parseFloat(depositAmount),
+        type: "deposit",
+        receipt: depositFile,
+      });
+      if (res?.transaction?.id) newTx.id = res.transaction.id;
+    } catch (_) {}
     setPendingDeposit(newTx);
     setDepositOpen(false);
     setDepositAmount("");
     setDepositFile(null);
   };
 
-  const handleWithdrawSubmit = () => {
-    if (!withdrawCard || withdrawCard.length < 16) return alert("Kart nömrəsini düzgün daxil edin (16 rəqəm).");
+  const handleWithdrawSubmit = async () => {
+    if (!withdrawCard || withdrawCard.length < 16)
+      return alert("Kart nömrəsini düzgün daxil edin (16 rəqəm).");
     if (!withdrawExpiry) return alert("Kartın bitmə tarixini daxil edin.");
 
     MockDataService.addTransaction({
       username: user.username,
-      amount: balance || 0, // Using full balance as requested
+      amount: balance || 0,
       type: "withdraw",
       cardNumber: withdrawCard,
-      expiryDate: withdrawExpiry
+      expiryDate: withdrawExpiry,
     });
+    try {
+      await ApiService.addTransaction({
+        username: user.username,
+        amount: balance || 0,
+        type: "withdraw",
+        cardNumber: withdrawCard,
+        expiryDate: withdrawExpiry,
+      });
+    } catch (_) {}
     setWithdrawOpen(false);
     setWithdrawCard("");
     setWithdrawExpiry("");
     alert("Çıxarış sorğusu qəbul edildi. Təsdiq gözlənilir.");
   };
 
-  const handleAuth = () => {
-    if(!username || !password || (isRegister && !phone)) return alert("Bütün xanaları doldurun.");
-    const users = MockDataService.getUsers();
-    
-      if (isRegister) {
-        if (users.find(u => u.username === username)) return alert("Bu istifadəçi adı artıq mövcuddur.");
-        if (users.find(u => u.phone === phone)) return alert("Bu telefon nömrəsi artıq qeydiyyatdan keçib.");
+  const handleAuth = async () => {
+    if (!username || !password || (isRegister && !phone))
+      return alert("Bütün xanaları doldurun.");
+    let users = [];
+    try {
+      users = await ApiService.getUsers();
+    } catch {
+      users = MockDataService.getUsers();
+    }
+    if (!Array.isArray(users)) users = [];
 
-        const newUser = { 
-          id: Math.floor(100000 + Math.random() * 900000), // Professional 6-digit ID
-          username, 
-          phone, 
-          password, 
-          balance: 0, 
-          role: "user", 
-          status: "active", 
-          gameCode: null 
-        };
+    if (isRegister) {
+      if (users.find((u) => u.username === username))
+        return alert("Bu istifadəçi adı artıq mövcuddur.");
+      if (users.find((u) => u.phone === phone))
+        return alert("Bu telefon nömrəsi artıq qeydiyyatdan keçib.");
+      try {
+        const res = await ApiService.registerUser({
+          username,
+          phone,
+          password,
+        });
+        const newUser = res.user
+          ? { ...res.user, password }
+          : {
+              id: res.id,
+              username,
+              phone,
+              password,
+              balance: 0,
+              role: "user",
+              status: "active",
+              gameCode: null,
+            };
+        const updated = [...users, newUser];
+        localStorage.setItem("casino_mock_users", JSON.stringify(updated));
+        setUser(newUser);
+        setAuthOpen(false);
+        return;
+      } catch (e) {
+        const msg = e?.message || "";
+        if (msg.includes("istifadəçi") || msg.includes("telefon"))
+          return alert(msg);
+      }
+      const newUser = {
+        id: Math.floor(100000 + Math.random() * 900000),
+        username,
+        phone,
+        password,
+        balance: 0,
+        role: "user",
+        status: "active",
+        gameCode: null,
+      };
       const updated = [...users, newUser];
       localStorage.setItem("casino_mock_users", JSON.stringify(updated));
       setUser(newUser);
       setAuthOpen(false);
     } else {
-      const existing = users.find(u => u.username === username && u.password === password);
+      const existing = users.find(
+        (u) => u.username === username && u.password === password,
+      );
       if (!existing) return alert("İstifadəçi adı və ya şifrə yanlışdır.");
       setUser(existing);
       setAuthOpen(false);
-      if (existing.role === 'admin') {
-          if(window.confirm("Admin olaraq daxil oldunuz. Admin panelinə keçmək istəyirsiniz?")) {
-              navigate("/admin");
-          }
+      if (existing.role === "admin") {
+        if (
+          window.confirm(
+            "Admin olaraq daxil oldunuz. Admin panelinə keçmək istəyirsiniz?",
+          )
+        ) {
+          navigate(`/${ADMIN_SECRET_URL}`);
+        }
       }
     }
   };
@@ -401,61 +842,204 @@ function UserApp() {
     localStorage.removeItem("casino_current_user");
   };
 
+  const handleWheelSpin = () => {
+    if (wheelSpinning || !user) return;
+    const winningIndex =
+      WHEEL_WINNABLE_INDICES[
+        Math.floor(Math.random() * WHEEL_WINNABLE_INDICES.length)
+      ];
+    const bonusPercent = winningIndex === 6 ? 20 : 10;
+    const segmentAngle = 360 / WHEEL_SEGMENTS.length;
+    const fullTurns = 360 * 6;
+    const finalAngle = fullTurns + (360 - winningIndex * segmentAngle);
+    setWheelSpinning(true);
+    setWheelResult(null);
+    setWheelRotation((prev) => prev + finalAngle);
+    const t = 4500;
+    setTimeout(() => {
+      setWheelSpinning(false);
+      setWheelResult(bonusPercent);
+      const updatedUser = { ...user, wheelSpun: true, bonusPercent };
+      setUser(updatedUser);
+      const allUsers = MockDataService.getUsers();
+      const updated = allUsers.map((u) => (u.id === user.id ? updatedUser : u));
+      localStorage.setItem("casino_mock_users", JSON.stringify(updated));
+      if (user)
+        localStorage.setItem(
+          "casino_current_user",
+          JSON.stringify(updatedUser),
+        );
+      try {
+        ApiService.setWheelResult(user.id, bonusPercent).catch(() => {});
+      } catch (_) {}
+    }, t);
+  };
+
+  const handleQuickEnter = async () => {
+    const guestId = Math.random().toString(36).slice(2, 8);
+    const quickUsername = "Qonaq_" + guestId;
+    const quickPassword = Math.random().toString(36).slice(2, 12);
+    const quickPhone = "";
+    let users = [];
+    try {
+      users = await ApiService.getUsers();
+    } catch {
+      users = MockDataService.getUsers();
+    }
+    if (!Array.isArray(users)) users = [];
+    try {
+      const res = await ApiService.registerUser({
+        username: quickUsername,
+        phone: quickPhone,
+        password: quickPassword,
+      });
+      const newUser = res.user
+        ? { ...res.user, password: quickPassword }
+        : {
+            id: res.id,
+            username: quickUsername,
+            phone: quickPhone,
+            password: quickPassword,
+            balance: 0,
+            role: "user",
+            status: "active",
+            gameCode: null,
+          };
+      const updated = [...users, newUser];
+      localStorage.setItem("casino_mock_users", JSON.stringify(updated));
+      setUser(newUser);
+      setAuthOpen(false);
+      return;
+    } catch (_) {}
+    const newUser = {
+      id: Math.floor(100000 + Math.random() * 900000),
+      username: quickUsername,
+      phone: quickPhone,
+      password: quickPassword,
+      balance: 0,
+      role: "user",
+      status: "active",
+      gameCode: null,
+    };
+    const updated = [...users, newUser];
+    localStorage.setItem("casino_mock_users", JSON.stringify(updated));
+    setUser(newUser);
+    setAuthOpen(false);
+  };
+
   return (
     <div className="h-screen bg-[#05070a] text-white flex flex-col overflow-hidden font-sans relative">
       <header className="px-5 py-4 bg-[#0a0c12]/80 backdrop-blur-xl border-b border-white/5 flex justify-between items-center z-50 sticky top-0">
         <div className="flex flex-col">
-          <h2 className="font-black text-amber-500 italic text-2xl tracking-tighter uppercase">TİFLİS KAZİNO</h2>
+          <h2 className="font-black text-amber-500 italic text-2xl tracking-tighter uppercase">
+            TİFLİS KAZİNO
+          </h2>
         </div>
         {user ? (
           <div className="flex items-center gap-3">
-            <div onClick={() => setWalletMenuOpen(true)} className="bg-white/5 pl-4 pr-1 py-1 rounded-2xl border border-white/10 flex items-center gap-3 cursor-pointer">
+            <div
+              onClick={() => setWalletMenuOpen(true)}
+              className="bg-white/5 pl-4 pr-1 py-1 rounded-2xl border border-white/10 flex items-center gap-3 cursor-pointer"
+            >
               <div className="text-right">
-                <span className="text-[9px] text-slate-500 block uppercase font-black">{user.username}</span>
-                <span className="text-slate-400 font-bold text-[10px]">Balans oyun daxilindədir</span>
+                <span className="text-[9px] text-slate-500 block uppercase font-black">
+                  {user.username}
+                </span>
+                <span className="text-slate-400 font-bold text-[10px]">
+                  Balans oyun daxilindədir
+                </span>
               </div>
-              <div className="bg-amber-500 p-1.5 rounded-xl text-black"><Wallet size={14} /></div>
+              <div className="bg-amber-500 p-1.5 rounded-xl text-black">
+                <Wallet size={14} />
+              </div>
             </div>
           </div>
         ) : (
-          <button onClick={() => { setIsRegister(false); setAuthOpen(true); }} className="bg-gradient-to-r from-amber-400 to-amber-600 text-black px-6 py-2.5 rounded-xl font-black text-xs uppercase">GİRİŞ</button>
+          <button
+            onClick={() => {
+              setIsRegister(false);
+              setAuthOpen(true);
+            }}
+            className="bg-gradient-to-r from-amber-400 to-amber-600 text-black px-6 py-2.5 rounded-xl font-black text-xs uppercase"
+          >
+            GİRİŞ
+          </button>
         )}
       </header>
 
       <div className="bg-black/40 backdrop-blur-md border-b border-white/5 py-2.5 px-4 flex items-center justify-between z-40 relative">
         <div className="flex items-center gap-2 shrink-0">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Canlı Uduşlar</span>
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
+            Canlı Uduşlar
+          </span>
         </div>
-        <div key={`${liveWin.name}-${liveWin.amount}`} className="flex items-center gap-3 animate-in fade-in slide-in-from-right duration-500">
-           <span className="text-[10px] font-bold text-white/90">{liveWin.name} ({liveWin.game})</span>
-           <span className="text-xs font-black text-green-400">+{liveWin.amount.toLocaleString()} ₼</span>
+        <div
+          key={`${liveWin.name}-${liveWin.amount}`}
+          className="flex items-center gap-3 animate-in fade-in slide-in-from-right duration-500"
+        >
+          <span className="text-[10px] font-bold text-white/90">
+            {liveWin.name} ({liveWin.game})
+          </span>
+          <span className="text-xs font-black text-green-400">
+            +{liveWin.amount.toLocaleString()} ₼
+          </span>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-32">
         <div className="px-4 pt-4">
           <div className="relative h-44 w-full rounded-[32px] overflow-hidden bg-gradient-to-br from-amber-600 to-amber-900 shadow-2xl shadow-amber-900/20 group">
-             <div className="relative h-full p-6 flex flex-col justify-end">
-               <span className="text-[10px] font-black bg-white/20 backdrop-blur-md w-fit px-3 py-1 rounded-full mb-2 uppercase tracking-widest">Premium Təcrübə</span>
-               <h1 className="text-2xl font-black text-white italic tracking-tighter leading-tight mb-1 uppercase">ŞANS BU GÜN <br/><span className="text-amber-400">SƏNİNDİR!</span></h1>
-             </div>
+            <div className="relative h-full p-6 flex flex-col justify-end">
+              <span className="text-[10px] font-black bg-white/20 backdrop-blur-md w-fit px-3 py-1 rounded-full mb-2 uppercase tracking-widest">
+                Premium Təcrübə
+              </span>
+              <h1 className="text-2xl font-black text-white italic tracking-tighter leading-tight mb-1 uppercase">
+                ŞANS BU GÜN <br />
+                <span className="text-amber-400">SƏNİNDİR!</span>
+              </h1>
+              {user && !user.wheelSpun && (
+                <button
+                  onClick={() => setWheelOpen(true)}
+                  className="mt-3 w-full max-w-[220px] bg-amber-500 hover:bg-amber-400 border border-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.5)] text-black py-3 rounded-xl font-black text-[12px] uppercase tracking-widest transition-all animate-none sm:animate-bounce"
+                >
+                  🎡 PULSUZ ÇARX — İNDİ FIRLAT
+                </button>
+              )}
+              {user && user.wheelSpun && user.bonusPercent && (
+                <p className="mt-2 text-[10px] font-bold text-amber-200 uppercase">
+                  Çarx bonusunuz: {user.bonusPercent}% (növbəti depozitə)
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="p-4 space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-[#0f111a] p-4 rounded-3xl border border-white/5 text-center">
-                <span className="text-[8px] font-black text-amber-600/60 uppercase block mb-1">Mini</span>
-                <span className="text-lg font-black text-white">{smallJP.toLocaleString()} ₼</span>
+              <span className="text-[8px] font-black text-amber-600/60 uppercase block mb-1">
+                Mini
+              </span>
+              <span className="text-lg font-black text-white">
+                {smallJP.toLocaleString()} ₼
+              </span>
             </div>
             <div className="bg-[#0f111a] p-4 rounded-3xl border border-white/5 text-center">
-                <span className="text-[8px] font-black text-cyan-500/60 uppercase block mb-1">Middle</span>
-                <span className="text-lg font-black text-white">{mediumJP.toLocaleString()} ₼</span>
+              <span className="text-[8px] font-black text-cyan-500/60 uppercase block mb-1">
+                Middle
+              </span>
+              <span className="text-lg font-black text-white">
+                {mediumJP.toLocaleString()} ₼
+              </span>
             </div>
             <div className="bg-[#0f111a] p-4 rounded-3xl border border-red-500/20 text-center">
-                <span className="text-[8px] font-black text-red-500 uppercase block mb-1 animate-pulse">Mega</span>
-                <span className="text-xl font-black text-red-500">{bigJP.toLocaleString()} ₼</span>
+              <span className="text-[8px] font-black text-red-500 uppercase block mb-1 animate-pulse">
+                Mega
+              </span>
+              <span className="text-xl font-black text-red-500">
+                {bigJP.toLocaleString()} ₼
+              </span>
             </div>
           </div>
         </div>
@@ -463,38 +1047,64 @@ function UserApp() {
         <div className="px-4 mb-4">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
             {CATEGORIES.map((cat) => (
-              <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border ${activeCategory === cat.id ? "bg-amber-500 border-amber-500 text-black" : "bg-[#0f111a] border-white/5 text-slate-400"}`}>{cat.label}</button>
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border ${activeCategory === cat.id ? "bg-amber-500 border-amber-500 text-black" : "bg-[#0f111a] border-white/5 text-slate-400"}`}
+              >
+                {cat.label}
+              </button>
             ))}
           </div>
         </div>
 
         <div className="px-4 mb-6">
           <div className="relative">
-            <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Oyun axtar..." className="w-full bg-[#0f111a] border border-white/5 rounded-[20px] py-4.5 pl-14 pr-4 text-sm outline-none placeholder:text-slate-600 font-medium" />
+            <Search
+              size={18}
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500"
+            />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Oyun axtar..."
+              className="w-full bg-[#0f111a] border border-white/5 rounded-[20px] py-4.5 pl-14 pr-4 text-sm outline-none placeholder:text-slate-600 font-medium"
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 px-4 overflow-hidden">
           {filteredGames.map((g) => (
-            <div key={g.id} className="group relative rounded-[24px] overflow-hidden border border-white/5 bg-[#0a0c12] active:scale-95 transition-all">
+            <div
+              key={g.id}
+              className="group relative rounded-[24px] overflow-hidden border border-white/5 bg-[#0a0c12] active:scale-95 transition-all"
+            >
               <div className="aspect-[4/5] relative">
-                <img src={g.img} alt={g.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img
+                  src={g.img}
+                  alt={g.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
                 <div className="absolute inset-x-0 bottom-0 p-3.5 flex flex-col items-center">
-                 <div className="h-0.5 w-8 bg-amber-500 mb-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-center"></div>
-                 <p className="text-[11px] font-black text-white uppercase tracking-tight text-center truncate w-full">{g.title}</p>
+                  <div className="h-0.5 w-8 bg-amber-500 mb-2 rounded-full transform scale-x-0 group-hover:scale-x-100 transition-transform origin-center"></div>
+                  <p className="text-[11px] font-black text-white uppercase tracking-tight text-center truncate w-full">
+                    {g.title}
+                  </p>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 bg-black/40 backdrop-blur-[2px]">
-                 <button 
+                  <button
                     onClick={() => {
-                        if(!user) return setAuthOpen(true);
-                        if(!currentGameCode) return alert("Hələ hər hansı depozitiniz yoxdur. Oyuna daxil olmaq üçün zəhmət olmasa depozit edin.");
-                        setGameModalOpen(true);
+                      if (!user) return setAuthOpen(true);
+                      if (!currentGameCode)
+                        return alert(
+                          "Hələ hər hansı depozitiniz yoxdur. Oyuna daxil olmaq üçün zəhmət olmasa depozit edin.",
+                        );
+                      setGameModalOpen(true);
                     }}
                     className="bg-amber-500 text-black px-6 py-2 rounded-full font-black text-[10px] uppercase shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform"
-                 >
+                  >
                     OYNA
-                 </button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -503,30 +1113,86 @@ function UserApp() {
       </div>
 
       <div className="fixed bottom-0 inset-x-0 bg-[#0a0c12]/80 backdrop-blur-2xl border-t border-white/5 flex justify-around items-center py-3 z-50">
-        <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-amber-500 transition-all"><Home size={22}/><span className="text-[9px] font-black uppercase">Əsas</span></button>
-        <button onClick={() => setTransactionsOpen(true)} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-amber-500 transition-all"><CreditCard size={22}/><span className="text-[9px] font-black uppercase">Tarixçə</span></button>
-        <div className="relative -top-6"><button onClick={() => setWalletMenuOpen(true)} className="bg-gradient-to-br from-amber-400 to-amber-600 p-4.5 rounded-[24px] border-4 border-[#05070a]"><Wallet size={24} className="text-black" /></button><span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-black text-amber-500 uppercase">Cüzdan</span></div>
-        <button onClick={() => setSidebarOpen(true)} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-white transition-all"><Menu size={22}/><span className="text-[9px] font-black uppercase">Menü</span></button>
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-amber-500 transition-all"
+        >
+          <Home size={22} />
+          <span className="text-[9px] font-black uppercase">Əsas</span>
+        </button>
+        <button
+          onClick={() => {
+            if (!user) setAuthOpen(true);
+            else setTransactionsOpen(true);
+          }}
+          className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-amber-500 transition-all"
+        >
+          <CreditCard size={22} />
+          <span className="text-[9px] font-black uppercase">Tarixçə</span>
+        </button>
+        <div className="relative -top-6">
+          <button
+            onClick={() => {
+              if (!user) setAuthOpen(true);
+              else setWalletMenuOpen(true);
+            }}
+            className="bg-gradient-to-br from-amber-400 to-amber-600 p-4.5 rounded-[24px] border-4 border-[#05070a]"
+          >
+            <Wallet size={24} className="text-black" />
+          </button>
+          <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[9px] font-black text-amber-500 uppercase">
+            Cüzdan
+          </span>
+        </div>
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-white transition-all"
+        >
+          <Menu size={22} />
+          <span className="text-[9px] font-black uppercase">Menü</span>
+        </button>
       </div>
 
       {sidebarOpen && (
         <>
-          <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/80 z-[60] backdrop-blur-sm" />
+          <div
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 bg-black/80 z-[60] backdrop-blur-sm"
+          />
           <aside className="fixed left-0 top-0 h-full w-80 bg-[#0a0c12] z-[70] flex flex-col border-r border-white/10 animate-in slide-in-from-left duration-300">
             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
               <h1 className="text-xl font-black text-amber-500 italic">MENU</h1>
-              <button onClick={() => setSidebarOpen(false)}><X size={20}/></button>
+              <button onClick={() => setSidebarOpen(false)}>
+                <X size={20} />
+              </button>
             </div>
             <div className="flex-1 p-6 space-y-4">
-                {user?.role === 'admin' && (
-                    <button onClick={() => {navigate("/admin"); setSidebarOpen(false);}} className="w-full flex items-center gap-4 p-4 bg-amber-500 text-black rounded-2xl text-[11px] font-black">
-                        <ShieldCheck size={20}/> ADMIN PANEL
-                    </button>
-                )}
-                <button onClick={() => {setAboutOpen(true); setSidebarOpen(false);}} className="w-full flex items-center gap-4 p-4 bg-white/5 rounded-2xl text-[11px] font-black">
-                  <Users size={20} className="text-purple-500"/> BİZİM HAQQIMIZDA
+              {user?.role === "admin" && (
+                <button
+                  onClick={() => {
+                    navigate("/panel-x9k2m7");
+                    setSidebarOpen(false);
+                  }}
+                  className="w-full flex items-center gap-4 p-4 bg-amber-500 text-black rounded-2xl text-[11px] font-black"
+                >
+                  <ShieldCheck size={20} /> ADMIN PANEL
                 </button>
-                <button onClick={handleLogout} className="w-full p-4 text-[10px] font-black text-slate-500 hover:text-red-500 border border-white/5 rounded-2xl">ÇIXIŞ ET</button>
+              )}
+              <button
+                onClick={() => {
+                  setAboutOpen(true);
+                  setSidebarOpen(false);
+                }}
+                className="w-full flex items-center gap-4 p-4 bg-white/5 rounded-2xl text-[11px] font-black"
+              >
+                <Users size={20} className="text-purple-500" /> BİZİM HAQQIMIZDA
+              </button>
+              <button
+                onClick={handleLogout}
+                className="w-full p-4 text-[10px] font-black text-slate-500 hover:text-red-500 border border-white/5 rounded-2xl"
+              >
+                ÇIXIŞ ET
+              </button>
             </div>
           </aside>
         </>
@@ -535,85 +1201,283 @@ function UserApp() {
       {aboutOpen && (
         <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4">
           <div className="bg-[#10141d] w-full max-w-lg rounded-3xl border border-white/10 p-8 space-y-6">
-             <div className="flex justify-between items-center"><h3 className="text-amber-500 font-black italic uppercase">HAQQIMIZDA</h3><button onClick={() => setAboutOpen(false)}><X /></button></div>
-             <p className="text-slate-300">Tiflis Kazino - Azərbaycanın ən etibarlı onlayn kazinosu.</p>
+            <div className="flex justify-between items-center">
+              <h3 className="text-amber-500 font-black italic uppercase">
+                HAQQIMIZDA
+              </h3>
+              <button onClick={() => setAboutOpen(false)}>
+                <X />
+              </button>
+            </div>
+            <p className="text-slate-300">
+              Tiflis Kazino - Azərbaycanın ən etibarlı onlayn kazinosu.
+            </p>
           </div>
         </div>
       )}
 
-      {depositOpen && (
+      {depositOpen && user && (
         <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4">
           <div className="bg-[#10141d] w-full max-w-md rounded-3xl border border-white/10 overflow-hidden">
-            <div className="p-5 border-b border-white/10 flex justify-between items-center"><h3 className="font-black uppercase text-sm">Balans Artır</h3><button onClick={() => setDepositOpen(false)}><X /></button></div>
-            
+            <div className="p-5 border-b border-white/10 flex justify-between items-center">
+              <h3 className="font-black uppercase text-sm">Balans Artır</h3>
+              <button onClick={() => setDepositOpen(false)}>
+                <X />
+              </button>
+            </div>
+
             <div className="p-6 space-y-5">
               <div className="bg-white/5 p-4 rounded-2xl space-y-2">
-                <span className="text-[10px] text-slate-500 font-black uppercase">Pulu bu karta göndərin:</span>
+                <span className="text-[10px] text-slate-500 font-black uppercase">
+                  Pulu bu karta göndərin:
+                </span>
                 <div className="flex items-center justify-between">
-                  <span className="text-amber-500 font-bold text-lg">{adminSettings.adminCard}</span>
-                  <button onClick={() => {navigator.clipboard.writeText(adminSettings.adminCard); alert("Kopyalandı!");}} className="p-2 bg-white/5 rounded-xl"><Copy size={16}/></button>
+                  <span className="text-amber-500 font-bold text-lg">
+                    {adminSettings.adminCard}
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(adminSettings.adminCard);
+                      alert("Kopyalandı!");
+                    }}
+                    className="p-2 bg-white/5 rounded-xl"
+                  >
+                    <Copy size={16} />
+                  </button>
                 </div>
-                <span className="text-[10px] text-slate-400 block">{adminSettings.adminCardName}</span>
+                <span className="text-[10px] text-slate-400 block">
+                  {adminSettings.adminCardName}
+                </span>
               </div>
-              <input type="number" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder="Məbləğ (AZN)" className="w-full bg-black p-4 rounded-2xl border border-white/10 outline-none" />
-              
+              <input
+                type="number"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                placeholder="Məbləğ (AZN)"
+                className="w-full bg-black p-4 rounded-2xl border border-white/10 outline-none"
+              />
+
               <div className="space-y-2">
-                <span className="text-[10px] text-slate-500 font-black uppercase">Çeki yükləyin:</span>
+                <span className="text-[10px] text-slate-500 font-black uppercase">
+                  Çeki yükləyin:
+                </span>
                 <label className="flex items-center gap-3 w-full bg-black p-4 rounded-2xl border border-dashed border-white/20 cursor-pointer hover:border-amber-500 transition-colors">
                   <Upload size={20} className="text-slate-500" />
-                  <span className="text-xs text-slate-400">{depositFile ? depositFile.name : "Fayl seçin..."}</span>
-                  <input type="file" className="hidden" onChange={e => setDepositFile(e.target.files[0])} />
+                  <span className="text-xs text-slate-400">
+                    {depositFile ? depositFile.name : "Fayl seçin..."}
+                  </span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => setDepositFile(e.target.files[0])}
+                  />
                 </label>
               </div>
 
-              <button onClick={handleDepositSubmit} className="w-full bg-green-500 text-black py-5 rounded-2xl font-black text-sm uppercase"> SORĞU GÖNDƏR</button>
+              <button
+                onClick={handleDepositSubmit}
+                className="w-full bg-green-500 text-black py-5 rounded-2xl font-black text-sm uppercase"
+              >
+                {" "}
+                SORĞU GÖNDƏR
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {walletMenuOpen && (
+      {walletMenuOpen && user && (
         <div className="fixed inset-0 bg-black/80 z-[110] flex items-end">
           <div className="bg-[#10141d] w-full rounded-t-[40px] p-8 space-y-6 animate-in slide-in-from-bottom">
             <div className="grid grid-cols-2 gap-5">
-              <button onClick={() => { setWalletMenuOpen(false); setDepositOpen(true); }} className="bg-green-500 text-black py-6 rounded-3xl font-black flex flex-col items-center gap-3"><ArrowDownLeft size={28}/> DEPOZİT</button>
-              <button onClick={() => { setWalletMenuOpen(false); setWithdrawOpen(true); }} className="bg-red-600 text-white py-6 rounded-3xl font-black flex flex-col items-center gap-3"><ArrowUpRight size={28}/> ÇIXARIŞ</button>
+              <button
+                onClick={() => {
+                  setWalletMenuOpen(false);
+                  setDepositOpen(true);
+                }}
+                className="bg-green-500 text-black py-6 rounded-3xl font-black flex flex-col items-center gap-3"
+              >
+                <ArrowDownLeft size={28} /> DEPOZİT
+              </button>
+              <button
+                onClick={() => {
+                  if ((balance || 0) <= 0) {
+                    alert(
+                      "Çıxarış üçün əvvəl ən azı bir depozit təsdiqlənməlidir.",
+                    );
+                    return;
+                  }
+                  setWalletMenuOpen(false);
+                  setWithdrawOpen(true);
+                }}
+                className="bg-red-600 text-white py-6 rounded-3xl font-black flex flex-col items-center gap-3"
+              >
+                <ArrowUpRight size={28} /> ÇIXARIŞ
+              </button>
             </div>
-            <button onClick={() => setWalletMenuOpen(false)} className="w-full bg-white/5 py-4 rounded-2xl text-slate-400 font-black uppercase">Ləğv et</button>
+            <button
+              onClick={() => setWalletMenuOpen(false)}
+              className="w-full bg-white/5 py-4 rounded-2xl text-slate-400 font-black uppercase"
+            >
+              Ləğv et
+            </button>
           </div>
         </div>
       )}
 
-      {withdrawOpen && (
+      {withdrawOpen && user && (
         <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4">
           <div className="bg-[#10141d] w-full max-w-md rounded-3xl border border-white/10 p-6 space-y-5">
-            <h3 className="font-black uppercase text-sm tracking-widest text-center">ÇIXARIŞ SORĞUSU</h3>
+            <h3 className="font-black uppercase text-sm tracking-widest text-center">
+              ÇIXARIŞ SORĞUSU
+            </h3>
             <div className="bg-white/5 p-4 rounded-2xl border border-white/5 flex flex-col items-center">
-                 <span className="text-[10px] text-slate-500 font-black uppercase">Sizin Oyun Kodunuz</span>
-                 <span className="text-amber-500 font-black text-xl italic tracking-widest">{user?.gameCode || "Yoxdur"}</span>
+              <span className="text-[10px] text-slate-500 font-black uppercase">
+                Sizin Oyun Kodunuz
+              </span>
+              <span className="text-amber-500 font-black text-xl italic tracking-widest">
+                {user?.gameCode || "Yoxdur"}
+              </span>
             </div>
             <div className="space-y-4">
-               <input 
-                type="text" 
+              <input
+                type="text"
                 maxLength={16}
-                value={withdrawCard} 
-                onChange={e => setWithdrawCard(e.target.value)} 
-                placeholder="Kartın 16 rəqəmi" 
-                className="w-full bg-black p-4 rounded-2xl border border-white/10 font-bold text-white" 
+                value={withdrawCard}
+                onChange={(e) => setWithdrawCard(e.target.value)}
+                placeholder="Kartın 16 rəqəmi"
+                className="w-full bg-black p-4 rounded-2xl border border-white/10 font-bold text-white"
               />
-              <input 
-                type="text" 
-                placeholder="MM/YY" 
+              <input
+                type="text"
+                placeholder="MM/YY"
                 value={withdrawExpiry}
-                onChange={e => setWithdrawExpiry(e.target.value)}
-                className="w-full bg-black p-4 rounded-2xl border border-white/10 font-bold text-white" 
+                onChange={(e) => setWithdrawExpiry(e.target.value)}
+                className="w-full bg-black p-4 rounded-2xl border border-white/10 font-bold text-white"
               />
               <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl">
-                <p className="text-[10px] text-amber-500 font-bold text-center uppercase">Koddakı bütün vəsait göndəriləcək</p>
+                <p className="text-[10px] text-amber-500 font-bold text-center uppercase">
+                  Koddakı bütün vəsait göndəriləcək
+                </p>
               </div>
             </div>
-            <button onClick={handleWithdrawSubmit} className="w-full bg-red-600 text-white py-5 rounded-2xl font-black text-sm uppercase">TƏSDİQLƏ</button>
-            <button onClick={() => setWithdrawOpen(false)} className="w-full text-slate-500 text-[10px] font-bold uppercase">Ləğv Et</button>
+            <button
+              onClick={handleWithdrawSubmit}
+              className="w-full bg-red-600 text-white py-5 rounded-2xl font-black text-sm uppercase"
+            >
+              TƏSDİQLƏ
+            </button>
+            <button
+              onClick={() => setWithdrawOpen(false)}
+              className="w-full text-slate-500 text-[10px] font-bold uppercase"
+            >
+              Ləğv Et
+            </button>
+          </div>
+        </div>
+      )}
+
+      {wheelOpen && user && (
+        <div className="fixed inset-0 bg-black/95 z-[250] flex items-center justify-center p-4 backdrop-blur-xl">
+          <div className="bg-[#0f111a] w-full max-w-sm rounded-[32px] border border-white/10 p-6 flex flex-col items-center">
+            <h3 className="text-lg font-black text-amber-500 uppercase italic mb-2">
+              Pulsuz çarx
+            </h3>
+            <p className="text-[10px] text-slate-500 uppercase font-bold mb-4">
+              Yalnız 1 dəfə fırlada bilərsiniz
+            </p>
+            <div className="relative w-[260px] h-[260px] rounded-full overflow-hidden border-4 border-amber-500/30 shadow-2xl">
+              <div
+                className="absolute inset-0 rounded-full transition-transform duration-[4500ms] ease-out"
+                style={{
+                  transform: `rotate(${wheelRotation}deg)`,
+                  background: `conic-gradient(${WHEEL_SEGMENTS.map((_, i) => {
+                    const start = (i / WHEEL_SEGMENTS.length) * 360;
+                    const end = ((i + 1) / WHEEL_SEGMENTS.length) * 360;
+                    const col =
+                      i === 6 || i === 7
+                        ? "#22c55e"
+                        : i % 2
+                          ? "#b45309"
+                          : "#f59e0b";
+                    return `${col} ${start}deg ${end}deg`;
+                  }).join(", ")})`,
+                }}
+              >
+                {WHEEL_SEGMENTS.map((segment, i) => {
+                  const angle =
+                    (i * 360) / WHEEL_SEGMENTS.length +
+                    360 / WHEEL_SEGMENTS.length / 2;
+                  return (
+                    <div
+                      key={i}
+                      className="absolute left-1/2 top-1/2 -ml-[50px] -mt-[130px] w-[100px] h-[130px] flex justify-center items-start pt-[14px] origin-bottom text-white font-black text-[11px] uppercase z-10 drop-shadow-md"
+                      style={{ transform: `rotate(${angle}deg)` }}
+                    >
+                      {segment}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="absolute inset-[18%] rounded-full bg-[#0f111a] border-2 border-amber-500/50 flex items-center justify-center">
+                {wheelResult != null ? (
+                  <span className="text-2xl font-black text-amber-500 uppercase">
+                    {wheelResult}% bonus
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-black text-slate-500 uppercase text-center">
+                    Çarx
+                  </span>
+                )}
+              </div>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-red-500 z-10" />
+            </div>
+            <div className="flex flex-wrap justify-center gap-1 mt-3 max-w-[260px]">
+              {WHEEL_SEGMENTS.map((s, i) => (
+                <span
+                  key={i}
+                  className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-slate-400"
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+            {wheelResult != null ? (
+              <div className="mt-4 w-full space-y-2">
+                <p className="text-center text-sm font-black text-green-500 uppercase">
+                  Təbriklər! {wheelResult}% bonus qazandınız
+                </p>
+                <p className="text-[10px] text-slate-500 text-center">
+                  Bonus növbəti təsdiqlənmiş depozitinizə tətbiq ediləcək
+                </p>
+                <button
+                  onClick={() => {
+                    setWheelOpen(false);
+                    setWheelResult(null);
+                  }}
+                  className="w-full bg-amber-500 text-black py-3 rounded-xl font-black text-xs uppercase"
+                >
+                  Bağla
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleWheelSpin}
+                disabled={wheelSpinning}
+                className="mt-4 w-full bg-amber-500 text-black py-3 rounded-xl font-black text-xs uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {wheelSpinning ? "Fırlanır..." : "ÇARXI FIRLAT"}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setWheelOpen(false);
+                setWheelResult(null);
+              }}
+              className="mt-2 text-slate-500 text-[10px] font-bold uppercase"
+            >
+              Ləğv et
+            </button>
           </div>
         </div>
       )}
@@ -621,24 +1485,63 @@ function UserApp() {
       {authOpen && (
         <div className="fixed inset-0 bg-black/95 z-[300] flex items-center justify-center p-6 backdrop-blur-2xl">
           <div className="bg-[#0f111a] p-8 rounded-[40px] w-full max-w-sm border border-white/10 text-center relative overflow-hidden">
-            <h2 className="text-2xl font-black text-white italic tracking-tighter mb-4 uppercase">{isRegister ? "QEYDİYYAT" : "XOŞ GƏLMİSİNİZ!"}</h2>
+            <h2 className="text-2xl font-black text-white italic tracking-tighter mb-4 uppercase">
+              {isRegister ? "QEYDİYYAT" : "XOŞ GƏLMİSİNİZ!"}
+            </h2>
+            <button
+              onClick={handleQuickEnter}
+              className="w-full bg-white/10 border border-amber-500/50 text-amber-500 py-4 rounded-2xl font-black text-xs uppercase tracking-widest mb-6 hover:bg-amber-500/20 transition-colors"
+            >
+              1 KLİKLƏ DAXİL OL — Avtomatik hesab açılır
+            </button>
+            <p className="text-[10px] text-slate-500 uppercase font-bold mb-4">
+              — və ya —
+            </p>
             <div className="space-y-4 mb-6">
-              <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="İstifadəçi Adı" className="w-full bg-black/50 p-5 rounded-2xl border border-white/5 outline-none font-bold" />
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="İstifadəçi Adı"
+                className="w-full bg-black/50 p-5 rounded-2xl border border-white/5 outline-none font-bold"
+              />
               {isRegister && (
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Mobil Nömrə" className="w-full bg-black/50 p-5 rounded-2xl border border-white/5 outline-none font-bold" />
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Mobil Nömrə"
+                  className="w-full bg-black/50 p-5 rounded-2xl border border-white/5 outline-none font-bold"
+                />
               )}
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Şifrə" className="w-full bg-black/50 p-5 rounded-2xl border border-white/5 outline-none font-bold" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Şifrə"
+                className="w-full bg-black/50 p-5 rounded-2xl border border-white/5 outline-none font-bold"
+              />
             </div>
-            <button onClick={handleAuth} className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em]">{isRegister ? "QEYDİYYAT OL" : "GİRİŞ ET"}</button>
-            
-            <button 
-              onClick={() => setIsRegister(!isRegister)} 
+            <button
+              onClick={handleAuth}
+              className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-black py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em]"
+            >
+              {isRegister ? "QEYDİYYAT OL" : "GİRİŞ ET"}
+            </button>
+
+            <button
+              onClick={() => setIsRegister(!isRegister)}
               className="mt-6 text-amber-500 text-[10px] font-black uppercase tracking-widest block w-full"
             >
-              {isRegister ? "HESABINIZ VAR? GİRİŞ EDİN" : "HESABINIZ YOXDUR? QEYDİYYAT"}
+              {isRegister
+                ? "HESABINIZ VAR? GİRİŞ EDİN"
+                : "HESABINIZ YOXDUR? QEYDİYYAT"}
             </button>
-            
-            <button onClick={() => setAuthOpen(false)} className="mt-4 text-slate-500 text-[10px] font-bold uppercase">Bağla</button>
+
+            <button
+              onClick={() => setAuthOpen(false)}
+              className="mt-4 text-slate-500 text-[10px] font-bold uppercase"
+            >
+              Bağla
+            </button>
           </div>
         </div>
       )}
@@ -646,67 +1549,118 @@ function UserApp() {
       {/* GAME MODAL with IFRAME */}
       {gameModalOpen && (
         <div className="fixed inset-0 bg-black z-[400] flex flex-col animate-in fade-in duration-300">
-            <header className="p-4 bg-[#0a0c12] border-b border-white/10 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => setGameModalOpen(false)} className="p-2 hover:bg-white/5 rounded-xl"><X size={24}/></button>
-                    <div>
-                        <span className="text-[10px] font-black text-slate-500 uppercase block leading-none">SİZİN OYUN KODUNUZ</span>
-                        <span className="text-amber-500 font-bold text-lg tracking-[0.2em]">{currentGameCode}</span>
-                    </div>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button onClick={() => window.location.reload()} className="p-2 bg-white/5 rounded-xl"><Zap size={18} /></button>
-                </div>
-            </header>
-            <div className="flex-1 bg-white relative">
-                <iframe 
-                    src="https://fastloto365.com" 
-                    className="w-full h-full border-none"
-                    title="Game Window"
-                />
+          <header className="p-4 bg-[#0a0c12] border-b border-white/10 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setGameModalOpen(false)}
+                className="p-2 hover:bg-white/5 rounded-xl"
+              >
+                <X size={24} />
+              </button>
+              <div>
+                <span className="text-[10px] font-black text-slate-500 uppercase block leading-none">
+                  SİZİN OYUN KODUNUZ
+                </span>
+                <span className="text-amber-500 font-bold text-lg tracking-[0.2em]">
+                  {currentGameCode}
+                </span>
+              </div>
             </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.location.reload()}
+                className="p-2 bg-white/5 rounded-xl"
+              >
+                <Zap size={18} />
+              </button>
+            </div>
+          </header>
+          <div className="flex-1 bg-white relative">
+            <iframe
+              src="https://fastloto365.com"
+              className="w-full h-full border-none"
+              title="Game Window"
+            />
+          </div>
         </div>
       )}
       {transactionsOpen && (
         <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-xl">
           <div className="bg-[#10141d] w-full max-w-lg rounded-[40px] border border-white/10 overflow-hidden flex flex-col max-h-[80vh]">
             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
-              <h3 className="font-black uppercase text-sm tracking-widest">Əməliyyatlar Tarixçəsi</h3>
-              <button onClick={() => setTransactionsOpen(false)} className="p-2 bg-white/5 rounded-full"><X size={20}/></button>
+              <h3 className="font-black uppercase text-sm tracking-widest">
+                Əməliyyatlar Tarixçəsi
+              </h3>
+              <button
+                onClick={() => setTransactionsOpen(false)}
+                className="p-2 bg-white/5 rounded-full"
+              >
+                <X size={20} />
+              </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {MockDataService.getTransactions().filter(t => t.username === user?.username).reverse().map(tx => (
-                <div key={tx.id} className="bg-white/5 p-4 rounded-3xl border border-white/5 flex flex-col gap-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${tx.type === 'deposit' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                        {tx.type === 'deposit' ? 'Depozit' : 'Çıxarış'}
-                      </span>
-                      {tx.type === 'deposit' && <p className="text-sm font-bold mt-1">{tx.amount.toFixed(2)} ₼</p>}
+              {MockDataService.getTransactions()
+                .filter((t) => t.username === user?.username)
+                .reverse()
+                .map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="bg-white/5 p-4 rounded-3xl border border-white/5 flex flex-col gap-2"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span
+                          className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${tx.type === "deposit" ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}
+                        >
+                          {tx.type === "deposit" ? "Depozit" : "Çıxarış"}
+                        </span>
+                        {tx.type === "deposit" && (
+                          <p className="text-sm font-bold mt-1">
+                            {tx.amount.toFixed(2)} ₼
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`text-[10px] font-black uppercase tracking-widest ${
+                            tx.status === "pending"
+                              ? "text-amber-500"
+                              : tx.status === "approved"
+                                ? "text-green-500"
+                                : "text-red-500"
+                          }`}
+                        >
+                          {tx.status === "pending"
+                            ? "Gözləyir"
+                            : tx.status === "approved"
+                              ? "Təsdiqləndi"
+                              : "Rədd edildi"}
+                        </span>
+                        <p className="text-[9px] text-slate-500 mt-1">
+                          {new Date(tx.date).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${
-                        tx.status === 'pending' ? 'text-amber-500' : 
-                        tx.status === 'approved' ? 'text-green-500' : 'text-red-500'
-                      }`}>
-                        {tx.status === 'pending' ? 'Gözləyir' : 
-                         tx.status === 'approved' ? 'Təsdiqləndi' : 'Rədd edildi'}
-                      </span>
-                      <p className="text-[9px] text-slate-500 mt-1">{new Date(tx.date).toLocaleString()}</p>
-                    </div>
+                    {tx.status === "rejected" && tx.reason && (
+                      <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                        <p className="text-[10px] font-black text-red-500 uppercase mb-1">
+                          Rədd Səbəbi:
+                        </p>
+                        <p className="text-xs text-slate-300 italic">
+                          {tx.reason}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  {tx.status === 'rejected' && tx.reason && (
-                    <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                       <p className="text-[10px] font-black text-red-500 uppercase mb-1">Rədd Səbəbi:</p>
-                       <p className="text-xs text-slate-300 italic">{tx.reason}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-              {MockDataService.getTransactions().filter(t => t.username === user?.username).length === 0 && (
+                ))}
+              {MockDataService.getTransactions().filter(
+                (t) => t.username === user?.username,
+              ).length === 0 && (
                 <div className="py-20 text-center space-y-4">
-                   <Info size={40} className="mx-auto text-slate-700" />
-                   <p className="text-slate-500 font-bold italic">Hələ heç bir əməliyyat yoxdur.</p>
+                  <Info size={40} className="mx-auto text-slate-700" />
+                  <p className="text-slate-500 font-bold italic">
+                    Hələ heç bir əməliyyat yoxdur.
+                  </p>
                 </div>
               )}
             </div>
@@ -716,7 +1670,7 @@ function UserApp() {
       {pendingDeposit && (
         <div className="fixed inset-0 bg-black/95 z-[500] flex items-center justify-center p-6 backdrop-blur-3xl">
           <div className="bg-[#0f111a] w-full max-w-sm rounded-[48px] border border-white/10 p-10 text-center space-y-8 animate-in zoom-in duration-300">
-            {pendingDeposit.status === 'pending' && (
+            {pendingDeposit.status === "pending" && (
               <>
                 <div className="relative mx-auto w-24 h-24">
                   <div className="absolute inset-0 border-4 border-amber-500/20 rounded-full"></div>
@@ -726,27 +1680,47 @@ function UserApp() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black uppercase italic tracking-widest">ÖDƏNİŞİNİZ YOXLANILIR</h3>
-                  <p className="text-slate-500 text-xs font-bold leading-relaxed px-4">Zəhmət olmasa gözləyin. Admin tərəfindən ödənişiniz təsdiqlənən kimi balansınız yenilənəcək.</p>
+                  <h3 className="text-xl font-black uppercase italic tracking-widest">
+                    ÖDƏNİŞİNİZ YOXLANILIR
+                  </h3>
+                  <p className="text-slate-500 text-xs font-bold leading-relaxed px-4">
+                    Zəhmət olmasa gözləyin. Admin tərəfindən ödənişiniz
+                    təsdiqlənən kimi balansınız yenilənəcək.
+                  </p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-3xl border border-white/5">
-                   <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Məbləğ</p>
-                   <p className="text-xl font-black text-white">{pendingDeposit.amount.toFixed(2)} ₼</p>
+                  <p className="text-[10px] text-slate-500 uppercase font-black mb-1">
+                    Məbləğ
+                  </p>
+                  <p className="text-xl font-black text-white">
+                    {pendingDeposit.amount.toFixed(2)} ₼
+                  </p>
                 </div>
+                <button
+                  onClick={() => setPendingDeposit(null)}
+                  className="w-full bg-white/5 text-slate-400 py-4 mt-2 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-colors"
+                >
+                  BAĞLA (GÖZLƏMƏDƏN ÇIX)
+                </button>
               </>
             )}
 
-            {pendingDeposit.status === 'approved' && (
+            {pendingDeposit.status === "approved" && (
               <>
                 <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto text-green-500 animate-in zoom-in duration-500">
                   <CheckCircle size={48} />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-black uppercase italic tracking-widest text-green-500">TƏSDİQLƏNDİ!</h3>
-                  <p className="text-slate-500 text-xs font-bold leading-relaxed">Ödənişiniz uğurla tamamlandı. Artıq balansınızdan istifadə edə bilərsiniz.</p>
+                  <h3 className="text-xl font-black uppercase italic tracking-widest text-green-500">
+                    TƏSDİQLƏNDİ!
+                  </h3>
+                  <p className="text-slate-500 text-xs font-bold leading-relaxed">
+                    Ödənişiniz uğurla tamamlandı. Artıq balansınızdan istifadə
+                    edə bilərsiniz.
+                  </p>
                 </div>
-                <button 
-                  onClick={() => setPendingDeposit(null)} 
+                <button
+                  onClick={() => setPendingDeposit(null)}
                   className="w-full bg-green-500 text-black py-5 rounded-3xl font-black text-xs uppercase tracking-widest"
                 >
                   BAŞLA
@@ -754,25 +1728,33 @@ function UserApp() {
               </>
             )}
 
-            {pendingDeposit.status === 'rejected' && (
+            {pendingDeposit.status === "rejected" && (
               <>
                 <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto text-red-500 animate-in zoom-in duration-500">
                   <X size={48} />
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-1">
-                    <h3 className="text-xl font-black uppercase italic tracking-widest text-red-500">RƏDD EDİLDİ</h3>
-                    <p className="text-slate-500 text-[10px] font-bold uppercase">Təəssüf ki, sorğunuz qəbul edilmədi.</p>
+                    <h3 className="text-xl font-black uppercase italic tracking-widest text-red-500">
+                      RƏDD EDİLDİ
+                    </h3>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase">
+                      Təəssüf ki, sorğunuz qəbul edilmədi.
+                    </p>
                   </div>
                   {pendingDeposit.reason && (
                     <div className="bg-red-500/5 border border-red-500/10 p-5 rounded-3xl">
-                      <p className="text-[10px] text-red-500 font-black uppercase mb-1">Səbəb:</p>
-                      <p className="text-xs text-slate-300 italic leading-relaxed">{pendingDeposit.reason}</p>
+                      <p className="text-[10px] text-red-500 font-black uppercase mb-1">
+                        Səbəb:
+                      </p>
+                      <p className="text-xs text-slate-300 italic leading-relaxed">
+                        {pendingDeposit.reason}
+                      </p>
                     </div>
                   )}
                 </div>
-                <button 
-                  onClick={() => setPendingDeposit(null)} 
+                <button
+                  onClick={() => setPendingDeposit(null)}
                   className="w-full bg-white/5 text-slate-400 py-5 rounded-3xl font-black text-xs uppercase tracking-widest"
                 >
                   BAĞLA
@@ -786,12 +1768,172 @@ function UserApp() {
   );
 }
 
+/* ================= ADMIN GUARD ================= */
+const ADMIN_SECRET_URL = "panel-x9k2m7";
+const ADMIN_PASSWORD = "Admin@2025!";
+
+function AdminGuard() {
+  const [authed, setAuthed] = React.useState(
+    () => sessionStorage.getItem("adm_ok") === "1",
+  );
+  const [pw, setPw] = React.useState("");
+  const [err, setErr] = React.useState(false);
+  const [shake, setShake] = React.useState(false);
+
+  const handleLogin = () => {
+    if (pw === ADMIN_PASSWORD) {
+      sessionStorage.setItem("adm_ok", "1");
+      setAuthed(true);
+      setErr(false);
+    } else {
+      setErr(true);
+      setShake(true);
+      setPw("");
+      setTimeout(() => setShake(false), 600);
+    }
+  };
+
+  if (authed) return <AdminDashboard />;
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#05070a",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "sans-serif",
+      }}
+    >
+      <div
+        style={{
+          background: "#0f111a",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 32,
+          padding: "48px 40px",
+          width: "100%",
+          maxWidth: 380,
+          textAlign: "center",
+          animation: shake ? "shake 0.5s" : "none",
+        }}
+      >
+        <style>{`
+          @keyframes shake {
+            0%,100%{transform:translateX(0)}
+            20%{transform:translateX(-10px)}
+            40%{transform:translateX(10px)}
+            60%{transform:translateX(-10px)}
+            80%{transform:translateX(10px)}
+          }
+        `}</style>
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            background: "rgba(245,158,11,0.1)",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 24px",
+            fontSize: 28,
+          }}
+        >
+          🔐
+        </div>
+        <h2
+          style={{
+            color: "#f59e0b",
+            fontWeight: 900,
+            fontSize: 20,
+            margin: "0 0 8px",
+            textTransform: "uppercase",
+            letterSpacing: 2,
+          }}
+        >
+          Admin Girişi
+        </h2>
+        <p
+          style={{
+            color: "#475569",
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: 2,
+            marginBottom: 32,
+          }}
+        >
+          Giriş üçün şifrə tələb olunur
+        </p>
+        <input
+          type="password"
+          value={pw}
+          onChange={(e) => {
+            setPw(e.target.value);
+            setErr(false);
+          }}
+          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+          placeholder="Şifrəni daxil edin"
+          autoFocus
+          style={{
+            width: "100%",
+            background: "#000",
+            border: err
+              ? "1px solid #ef4444"
+              : "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 16,
+            padding: "16px 20px",
+            color: "#fff",
+            fontSize: 14,
+            fontWeight: 700,
+            outline: "none",
+            boxSizing: "border-box",
+            marginBottom: 12,
+          }}
+        />
+        {err && (
+          <p
+            style={{
+              color: "#ef4444",
+              fontSize: 11,
+              fontWeight: 700,
+              marginBottom: 16,
+              textTransform: "uppercase",
+            }}
+          >
+            ❌ Şifrə yanlışdır!
+          </p>
+        )}
+        <button
+          onClick={handleLogin}
+          style={{
+            width: "100%",
+            background: "linear-gradient(135deg, #f59e0b, #d97706)",
+            color: "#000",
+            border: "none",
+            borderRadius: 16,
+            padding: "16px",
+            fontWeight: 900,
+            fontSize: 12,
+            textTransform: "uppercase",
+            letterSpacing: 2,
+            cursor: "pointer",
+          }}
+        >
+          GİRİŞ ET
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<UserApp />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path={`/${ADMIN_SECRET_URL}`} element={<AdminGuard />} />
       </Routes>
     </BrowserRouter>
   );

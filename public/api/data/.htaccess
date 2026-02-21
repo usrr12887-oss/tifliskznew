@@ -1,0 +1,4 @@
+# Prevent direct listing; allow PHP to read/write
+<Files "*.json">
+  Require all denied
+</Files>

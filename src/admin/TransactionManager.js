@@ -1,23 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { MockDataService } from "../services/MockDataService";
+import { ApiService } from "../services/ApiService";
 import { CheckCircle, XCircle, Clock, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+
+async function fetchTransactions() {
+  try {
+    const list = await ApiService.getTransactions();
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return MockDataService.getTransactions();
+  }
+}
 
 export default function TransactionManager() {
   const [transactions, setTransactions] = useState([]);
 
+  const loadTx = () => fetchTransactions().then(setTransactions);
+
   useEffect(() => {
-    setTransactions(MockDataService.getTransactions());
-    
-    // Auto-update if data changes (simple polling/refresh)
-    const interval = setInterval(() => {
-      setTransactions(MockDataService.getTransactions());
-    }, 5000);
+    loadTx();
+    const interval = setInterval(loadTx, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleStatusChange = (txId, status) => {
-    const updated = MockDataService.updateTransactionStatus(txId, status, null, null);
-    setTransactions(updated);
+  const handleStatusChange = async (txId, status, reason = null, gameCode = null) => {
+    MockDataService.updateTransactionStatus(txId, status, reason, gameCode);
+    try {
+      await ApiService.updateTransaction(Number(txId), status, reason, gameCode);
+    } catch (_) {}
+    loadTx();
   };
 
   return (

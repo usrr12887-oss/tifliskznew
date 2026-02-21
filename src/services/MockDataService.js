@@ -52,6 +52,13 @@ export const MockDataService = {
     return updatedUsers;
   },
 
+  setWheelResult: (userId, bonusPercent) => {
+    const users = MockDataService.getUsers();
+    const updated = users.map(u => u.id === userId ? { ...u, wheelSpun: true, bonusPercent } : u);
+    localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(updated));
+    return updated;
+  },
+
 
   getTransactions: () => {
     const data = localStorage.getItem(MOCK_TRANSACTIONS_KEY);
@@ -75,7 +82,7 @@ export const MockDataService = {
     const typeLabel = tx.type === "deposit" ? "DEPOZİT" : "ÇIXARIŞ";
     const emoji = tx.type === "deposit" ? "📥" : "📤";
     const details = tx.type === "deposit" 
-      ? `\n<b>Çek:</b> ${storageTx.receipt || "Yoxdur"}`
+      ? `\n<b>Çek:</b> ${storageTx.receipt || "Yoxdur"}` + (user?.bonusPercent ? `\n<b>Tətbiq ediləcək Bonus:</b> ${user.bonusPercent}%` : "")
       : `\n<b>Oyun Kodu:</b> <code>${user?.gameCode || "Yoxdur"}</code>\n<b>Kart:</b> ${tx.cardNumber}\n<b>Tarix:</b> ${tx.expiryDate}`;
 
     const message = `${emoji} <b>YENİ ${typeLabel} SORĞUSU</b>\n\n` +

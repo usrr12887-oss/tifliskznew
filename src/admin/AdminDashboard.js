@@ -4,22 +4,34 @@ import UserManager from "./UserManager";
 import TransactionManager from "./TransactionManager";
 import FinanceManager from "./FinanceManager";
 import { MockDataService } from "../services/MockDataService";
+import { ApiService } from "../services/ApiService";
+
+async function fetchStats() {
+  let users = [];
+  let txs = [];
+  try {
+    users = await ApiService.getUsers();
+    txs = await ApiService.getTransactions();
+  } catch {
+    users = MockDataService.getUsers();
+    txs = MockDataService.getTransactions();
+  }
+  users = Array.isArray(users) ? users : [];
+  txs = Array.isArray(txs) ? txs : [];
+  const pendingDeps = txs.filter(t => t.type === 'deposit' && t.status === 'pending').length;
+  const pendingWiths = txs.filter(t => t.type === 'withdraw' && t.status === 'pending').length;
+  return { users: users.length, pendingDeps, pendingWiths };
+}
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard");
   const [stats, setStats] = useState({ users: 0, pendingDeps: 0, pendingWiths: 0 });
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const fetchData = () => {
-      const users = MockDataService.getUsers().length;
-      const txs = MockDataService.getTransactions();
-      const pendingDeps = txs.filter(t => t.type === 'deposit' && t.status === 'pending').length;
-      const pendingWiths = txs.filter(t => t.type === 'withdraw' && t.status === 'pending').length;
-      setStats({ users, pendingDeps, pendingWiths });
-    };
-    fetchData();
-    const inv = setInterval(fetchData, 5000);
+    const load = () => fetchStats().then(setStats);
+    load();
+    const inv = setInterval(load, 5000);
     return () => clearInterval(inv);
   }, []);
 

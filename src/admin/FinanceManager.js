@@ -1,6 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { MockDataService } from "../services/MockDataService";
+import { ApiService } from "../services/ApiService";
 import { ArrowDownLeft, ArrowUpRight, TrendingUp, Clock, CheckCircle2 } from "lucide-react";
+
+function computeStats(txs) {
+  const approved = (txs || []).filter(t => t.status === 'approved');
+  const totalDeposits = approved.filter(t => t.type === 'deposit').reduce((s, t) => s + (t.amount || 0), 0);
+  const totalWithdrawals = approved.filter(t => t.type === 'withdraw').reduce((s, t) => s + (t.amount || 0), 0);
+  return {
+    totalDeposits,
+    totalWithdrawals,
+    netProfit: totalDeposits - totalWithdrawals,
+    pendingCount: (txs || []).filter(t => t.status === 'pending').length,
+    approvedCount: approved.length
+  };
+}
+
+async function fetchStats() {
+  try {
+    const txs = await ApiService.getTransactions();
+    return computeStats(Array.isArray(txs) ? txs : []);
+  } catch {
+    return MockDataService.getFinanceStats();
+  }
+}
 
 export default function FinanceManager() {
   const [stats, setStats] = useState({
@@ -12,10 +35,8 @@ export default function FinanceManager() {
   });
 
   useEffect(() => {
-    setStats(MockDataService.getFinanceStats());
-    const interval = setInterval(() => {
-        setStats(MockDataService.getFinanceStats());
-    }, 5000);
+    fetchStats().then(setStats);
+    const interval = setInterval(() => fetchStats().then(setStats), 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -46,7 +67,7 @@ export default function FinanceManager() {
   const handleReset = () => {
     if (window.confirm("Bütün maliyyə əməliyyatları tarixçəsini sıfırlamaq istədiyinizə əminsiniz?")) {
         MockDataService.clearTransactions();
-        setStats(MockDataService.getFinanceStats());
+        fetchStats().then(setStats);
         alert("Maliyyə sıfırlandı.");
     }
   };

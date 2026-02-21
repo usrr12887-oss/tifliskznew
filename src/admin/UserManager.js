@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { MockDataService } from "../services/MockDataService";
+import { ApiService } from "../services/ApiService";
 import { Search, UserPlus, Edit2, Trash2, Check, X, History } from "lucide-react";
+
+async function fetchUsers() {
+  try {
+    const list = await ApiService.getUsers();
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return MockDataService.getUsers();
+  }
+}
 
 export default function UserManager() {
   const [users, setUsers] = useState([]);
@@ -9,8 +19,14 @@ export default function UserManager() {
   const [newBalance, setNewBalance] = useState("");
   const [selectedUserTxs, setSelectedUserTxs] = useState(null);
 
+  const loadUsers = () => {
+    fetchUsers().then(setUsers);
+  };
+
   useEffect(() => {
-    setUsers(MockDataService.getUsers());
+    loadUsers();
+    const interval = setInterval(loadUsers, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleEditBalance = (user) => {
@@ -18,16 +34,26 @@ export default function UserManager() {
     setNewBalance(user.balance.toString());
   };
 
-  const handleViewTransactions = (user) => {
-    const txs = MockDataService.getTransactions().filter(t => t.username === user.username);
-    setSelectedUserTxs({ user, txs });
+  const handleViewTransactions = async (user) => {
+    let txs = [];
+    try {
+      txs = await ApiService.getTransactions();
+    } catch {
+      txs = MockDataService.getTransactions();
+    }
+    setSelectedUserTxs({ user, txs: txs.filter(t => t.username === user.username) });
   };
 
-  const saveBalance = () => {
+  const saveBalance = async () => {
     if (!newBalance || isNaN(newBalance)) return;
-    const amount = parseFloat(newBalance) - editingUser.balance;
-    const updated = MockDataService.updateUserBalance(editingUser.id, amount);
-    setUsers(updated);
+    const balanceDelta = parseFloat(newBalance) - (editingUser.balance || 0);
+    try {
+      await ApiService.updateUserBalance(editingUser.id, balanceDelta);
+      loadUsers();
+    } catch {
+      const updated = MockDataService.updateUserBalance(editingUser.id, balanceDelta);
+      setUsers(updated);
+    }
     setEditingUser(null);
   };
 
