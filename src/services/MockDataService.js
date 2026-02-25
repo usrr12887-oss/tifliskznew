@@ -5,7 +5,6 @@ const MOCK_TRANSACTIONS_KEY = "casino_mock_transactions";
 const MOCK_ADMIN_SETTINGS_KEY = "casino_admin_settings";
 
 const initialUsers = [
-  { id: 1, username: "admin", phone: "0501112233", password: "admin", balance: 1000, role: "admin", status: "active", gameCode: null },
   { id: 2, username: "user1", phone: "0502223344", password: "123", balance: 500, role: "user", status: "active", gameCode: null },
 ];
 
@@ -55,6 +54,14 @@ export const MockDataService = {
   setWheelResult: (userId, bonusPercent) => {
     const users = MockDataService.getUsers();
     const updated = users.map(u => u.id === userId ? { ...u, wheelSpun: true, bonusPercent } : u);
+    localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(updated));
+    return updated;
+  },
+
+  blockUserDeposit: (userId, durationMinutes = 15) => {
+    const users = MockDataService.getUsers();
+    const blockUntil = Date.now() + durationMinutes * 60 * 1000;
+    const updated = users.map(u => String(u.id) === String(userId) ? { ...u, depositBlockedUntil: blockUntil } : u);
     localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(updated));
     return updated;
   },

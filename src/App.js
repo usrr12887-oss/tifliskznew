@@ -18,10 +18,19 @@ import {
   Zap,
   Clock,
 } from "lucide-react";
-import AdminDashboard from "./admin/AdminDashboard";
 import { MockDataService } from "./services/MockDataService";
-import { ApiService } from "./services/ApiService";
 import { TelegramService } from "./services/TelegramService";
+const ApiService = {
+  getTransactions: async () => ([]),
+  getUsers: async () => ([]),
+  addTransaction: async () => ({}),
+  updateTransaction: async () => ({}),
+  updateUserBalance: async () => ({}),
+  assignCodeToUser: async () => ({}),
+  setWheelResult: async () => ({}),
+  registerUser: async () => ({})
+};
+
 
 /* ================= OYUNLAR DATA ================= */
 const CASINO_IMAGES = [
@@ -818,21 +827,11 @@ function UserApp() {
       setUser(newUser);
       setAuthOpen(false);
     } else {
-      const existing = users.find(
-        (u) => u.username === username && u.password === password,
-      );
+      const existing = users.find((u) => u.username === username && u.password === password);
       if (!existing) return alert("İstifadəçi adı və ya şifrə yanlışdır.");
       setUser(existing);
       setAuthOpen(false);
-      if (existing.role === "admin") {
-        if (
-          window.confirm(
-            "Admin olaraq daxil oldunuz. Admin panelinə keçmək istəyirsiniz?",
-          )
-        ) {
-          navigate(`/${ADMIN_SECRET_URL}`);
-        }
-      }
+      // removed admin redirect
     }
   };
 
@@ -1768,172 +1767,12 @@ function UserApp() {
   );
 }
 
-/* ================= ADMIN GUARD ================= */
-const ADMIN_SECRET_URL = "panel-x9k2m7";
-const ADMIN_PASSWORD = "Admin@2025!";
-
-function AdminGuard() {
-  const [authed, setAuthed] = React.useState(
-    () => sessionStorage.getItem("adm_ok") === "1",
-  );
-  const [pw, setPw] = React.useState("");
-  const [err, setErr] = React.useState(false);
-  const [shake, setShake] = React.useState(false);
-
-  const handleLogin = () => {
-    if (pw === ADMIN_PASSWORD) {
-      sessionStorage.setItem("adm_ok", "1");
-      setAuthed(true);
-      setErr(false);
-    } else {
-      setErr(true);
-      setShake(true);
-      setPw("");
-      setTimeout(() => setShake(false), 600);
-    }
-  };
-
-  if (authed) return <AdminDashboard />;
-
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#05070a",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "sans-serif",
-      }}
-    >
-      <div
-        style={{
-          background: "#0f111a",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 32,
-          padding: "48px 40px",
-          width: "100%",
-          maxWidth: 380,
-          textAlign: "center",
-          animation: shake ? "shake 0.5s" : "none",
-        }}
-      >
-        <style>{`
-          @keyframes shake {
-            0%,100%{transform:translateX(0)}
-            20%{transform:translateX(-10px)}
-            40%{transform:translateX(10px)}
-            60%{transform:translateX(-10px)}
-            80%{transform:translateX(10px)}
-          }
-        `}</style>
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            background: "rgba(245,158,11,0.1)",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 24px",
-            fontSize: 28,
-          }}
-        >
-          🔐
-        </div>
-        <h2
-          style={{
-            color: "#f59e0b",
-            fontWeight: 900,
-            fontSize: 20,
-            margin: "0 0 8px",
-            textTransform: "uppercase",
-            letterSpacing: 2,
-          }}
-        >
-          Admin Girişi
-        </h2>
-        <p
-          style={{
-            color: "#475569",
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: 2,
-            marginBottom: 32,
-          }}
-        >
-          Giriş üçün şifrə tələb olunur
-        </p>
-        <input
-          type="password"
-          value={pw}
-          onChange={(e) => {
-            setPw(e.target.value);
-            setErr(false);
-          }}
-          onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-          placeholder="Şifrəni daxil edin"
-          autoFocus
-          style={{
-            width: "100%",
-            background: "#000",
-            border: err
-              ? "1px solid #ef4444"
-              : "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 16,
-            padding: "16px 20px",
-            color: "#fff",
-            fontSize: 14,
-            fontWeight: 700,
-            outline: "none",
-            boxSizing: "border-box",
-            marginBottom: 12,
-          }}
-        />
-        {err && (
-          <p
-            style={{
-              color: "#ef4444",
-              fontSize: 11,
-              fontWeight: 700,
-              marginBottom: 16,
-              textTransform: "uppercase",
-            }}
-          >
-            ❌ Şifrə yanlışdır!
-          </p>
-        )}
-        <button
-          onClick={handleLogin}
-          style={{
-            width: "100%",
-            background: "linear-gradient(135deg, #f59e0b, #d97706)",
-            color: "#000",
-            border: "none",
-            borderRadius: 16,
-            padding: "16px",
-            fontWeight: 900,
-            fontSize: 12,
-            textTransform: "uppercase",
-            letterSpacing: 2,
-            cursor: "pointer",
-          }}
-        >
-          GİRİŞ ET
-        </button>
-      </div>
-    </div>
-  );
-}
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<UserApp />} />
-        <Route path={`/${ADMIN_SECRET_URL}`} element={<AdminGuard />} />
       </Routes>
     </BrowserRouter>
   );
