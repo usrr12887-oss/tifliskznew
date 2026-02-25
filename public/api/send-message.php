@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *'); // Məhdudiyyət üçün bunu yalnız öz saytınıza təyin edə bilərsiniz, məsələn: header('Access-Control-Allow-Origin: https://sizin-saytiniz.com');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -9,55 +9,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-  echo json_encode(['ok' => false, 'error' => 'Only POST allowed']);
-  exit;
-}
-
-// Telegram Token v? Group ID (backend-d? saxlan?l?r, t?hl?k?sizdir)
+// Telegram Token və Group ID (backend-də saxlanılır, tam təhlükəsizdir, F12-də görünməz)
 define('BOT_TOKEN', '8610192388:AAEswmzFCQWvECBNtwOFYaooa5ls7mDxhuo');
 define('CHAT_ID', '-5110900613');
 
-$input = file_get_contents('php://input');
-$data = json_decode($input, true);
-
-if (!$data) {
-    echo json_encode(['ok' => false, 'error' => 'Invalid JSON']);
+$method = $_REQUEST['method'] ?? '';
+if (!$method) {
+    echo json_encode(['ok' => false, 'error' => 'No method specified']);
     exit;
 }
 
-$text = isset($data['text']) ? $data['text'] : '';
+$url = 'https://api.telegram.org/bot' . BOT_TOKEN . '/' . $method;
 
-if (empty($text)) {
-    echo json_encode(['ok' => false, 'error' => 'Message text is empty']);
-    exit;
-}
+// Şəkil yükləmək üçün oxuma forması (multipart/form-data)
+$contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
 
-$url = 'https://api.telegram.org/bot' . BOT_TOKEN . '/sendMessage';
-
-$postData = [
-    'chat_id' => CHAT_ID,
-    'text' => $text,
-    'parse_mode' => 'HTML'
-];
-
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $url);
-curl_setopt($ch, CURLOPT_POST, 1);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-try {
-    $result = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+if (strpos($contentType, 'multipart/form-data') !== false) {
+    $postData = $_POST;
+    // Yalnız təyin edilmiş CHAT_ID-yə göndər
+    $postData['chat_id'] = CHAT_ID;
     
-    if(curl_errno($ch)){
-        throw new Exception(curl_error($ch));
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    
+    if (isset($_FILES['photo'])) {
+        $cfile = new CURLFile($_FILES['photo']['tmp_name'], $_FILES['photo']['type'], $_FILES['photo']['name']);
+        $postData['photo'] = $cfile;
     }
     
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $result = curl_exec($ch);
+    curl_close($ch);
     echo $result;
-} catch (Exception $e) {
-    echo json_encode(['ok' => false, 'error' => 'cURL error: ' . $e->getMessage()]);
+    exit;
+} else {
+    // Normal JSON (və ya GET) 
+    $input = file_get_contents('php://input');
+    
+    if ($input) {
+        $data = json_decode($input, true) ?: [];
+    } else {
+        $data = $_GET; 
+    }
+    
+    // Yalnız təyin edilmiş CHAT_ID-dən məlumatları oxu və ya göndər (getUpdates istisna olmaqla, o da hamısı ilə işləyir)
+    if ($method !== 'getUpdates') {
+        $data['chat_id'] = CHAT_ID;
+    }
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+    if (!empty($data) || $_SERVER['REQUEST_METHOD'] === 'POST') {
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    }
+    
+    $result = curl_exec($ch);
+    // curl_close buraxılır
+    echo $result;
 }
 ?>
