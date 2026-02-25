@@ -41,7 +41,6 @@ if (strpos($contentType, 'multipart/form-data') !== false) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $result = curl_exec($ch);
-    curl_close($ch);
     echo $result;
     exit;
 } else {
