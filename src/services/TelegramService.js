@@ -1,100 +1,38 @@
-const API_BASE = '/api/send-message.php';
+/**
+ * Təhlükəsizlik səbəbilə artıq birbaşa Telegram API çağırılmır.
+ * Bütün sorğular backend qatından (Node.js) keçir.
+ */
+
+const BACKEND_API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001/api';
 
 export const TelegramService = {
-  sendMessage: async (message, buttons = null, replyToMessageId = null) => {
+  /**
+   * Depozit və ya Çıxarış sorğusunu backend-ə göndərir
+   */
+  requestAction: async (userId, type, amount, data = {}) => {
     try {
-      const url = `${API_BASE}?method=sendMessage`;
-      const body = {
-        text: message,
-        parse_mode: "HTML",
-      };
-
-      if (replyToMessageId) {
-        body.reply_to_message_id = replyToMessageId;
-      }
-
-      if (buttons) {
-        body.reply_markup = {
-          inline_keyboard: buttons
-        };
-      }
-
-      const response = await fetch(url, {
+      const response = await fetch(`${BACKEND_API}/action`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          userId,
+          type,
+          amount,
+          data,
+          requestId: `${userId}-${Date.now()}` // Unique request ID for de-duplication
+        }),
       });
-      return await response.json();
-    } catch (error) {
-      console.error("Telegram error:", error);
-    }
-  },
-
-  sendPhoto: async (caption, file, buttons = null) => {
-    try {
-      const url = `${API_BASE}?method=sendPhoto`;
-      const formData = new FormData();
-      formData.append("photo", file);
-      formData.append("caption", caption);
-      formData.append("parse_mode", "HTML");
-
-      if (buttons) {
-        formData.append("reply_markup", JSON.stringify({ inline_keyboard: buttons }));
-      }
-
-      const response = await fetch(url, {
-        method: "POST",
-        body: formData,
-      });
+      
       const result = await response.json();
-      if (!result.ok) {
-        console.error("Telegram API Error:", result.description);
-      }
       return result;
     } catch (error) {
-      console.error("Telegram photo error:", error);
+      console.error("Backend connection error:", error);
+      return { success: false, message: "Serverlə əlaqə kəsildi." };
     }
   },
 
-  getUpdates: async (offset = 0) => {
-    try {
-      const url = `${API_BASE}?method=getUpdates&offset=${offset}`;
-      const response = await fetch(url);
-      return await response.json();
-    } catch (error) {
-      console.error("Telegram getUpdates error:", error);
-      return { ok: false };
-    }
-  },
-
-  getChat: async () => {
-    try {
-      const url = `${API_BASE}?method=getChat`;
-      const response = await fetch(url);
-      return await response.json();
-    } catch (error) {
-      console.error("Telegram getChat error:", error);
-      return { ok: false };
-    }
-  },
-
-  pinChatMessage: async (message_id) => {
-    try {
-      const url = `${API_BASE}?method=pinChatMessage`;
-      const body = {
-        message_id: message_id
-      };
-      
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      return await response.json();
-    } catch (error) {
-      console.error("Telegram pinChatMessage error:", error);
-      return { ok: false };
-    }
-  }
+  // Köhnə metodlar silindi və ya dummy edildi (layihədə qırılma olmaması üçün)
+  sendMessage: async () => ({ success: false, message: "Direct access disabled" }),
+  getUpdates: async () => ({ ok: true, result: [] }), // Polling artıq frontend-də olmamalıdır
+  checkBlock: async () => ({ blocked: false })
 };
-

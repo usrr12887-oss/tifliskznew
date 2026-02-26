@@ -314,194 +314,11 @@ function UserApp() {
 
   /* ================= EFFECTS ================= */
 
-  // Telegram Command & Callback Polling
+  // Telegram Polling və Command handling məntiqi təhlükəsizlik səbəbilə silindi.
+  // Artıq bütün Telegram əməliyyatları yalnız Backend tərəfindən idarə olunur.
   useEffect(() => {
-    const pollTelegram = async () => {
-      const updates = await TelegramService.getUpdates(lastUpdateId + 1);
-      if (updates.ok && updates.result.length > 0) {
-        let latestId = lastUpdateId;
-        updates.result.forEach((update) => {
-          latestId = update.update_id;
-
-          // Handle Commands (/kart, /red)
-          const text = update.message?.text;
-          if (text) {
-            if (text.startsWith("/kart")) {
-              const parts = text.split(" ");
-              if (parts.length >= 2) {
-                const newCard = parts[1];
-                const newName =
-                  parts.slice(2).join(" ") || "Tiflis Kazino Admin";
-                const newSettings = {
-                  adminCard: newCard,
-                  adminCardName: newName,
-                };
-                MockDataService.updateAdminSettings(newSettings);
-                setAdminSettings(newSettings);
-                // Send AND Pin message for persistence
-                TelegramService.sendMessage(
-                  `✅ Kart daxil edildi:\nKART: ${newCard}\nAD: ${newName}`,
-                ).then((res) => {
-                  if (res?.ok) {
-                    TelegramService.pinChatMessage(res.result.message_id);
-                  }
-                });
-              }
-            } else if (text.startsWith("/red")) {
-              const parts = text.split(" ");
-              if (parts.length >= 3) {
-                const txId = parts[1];
-                const reason = parts.slice(2).join(" ");
-                MockDataService.updateTransactionStatus(
-                  txId,
-                  "rejected",
-                  reason,
-                );
-                ApiService.updateTransaction(
-                  Number(txId),
-                  "rejected",
-                  reason,
-                  null,
-                ).catch(() => {});
-                TelegramService.sendMessage(
-                  `❌ Sorğu #${txId} rədd edildi.\nSəbəb: ${reason}`,
-                );
-              }
-            } else if (text.startsWith("/tesdiq")) {
-              const parts = text.split(" ");
-              if (parts.length >= 3) {
-                const txId = parts[1];
-                const gameCode = parts[2];
-                MockDataService.updateTransactionStatus(
-                  txId,
-                  "approved",
-                  null,
-                  gameCode,
-                );
-                ApiService.updateTransaction(
-                  Number(txId),
-                  "approved",
-                  null,
-                  gameCode,
-                ).catch(() => {});
-                TelegramService.sendMessage(
-                  `✅ Sorğu #${txId} təsdiqləndi.\nOyun Kodu: ${gameCode}`,
-                );
-              } else {
-                TelegramService.sendMessage(
-                  `❌ Yanlış format! \nNümunə: <code>/tesdiq 123456789 ABC123</code>`,
-                );
-              }
-            }
-
-            // Handle Replies for Approval/Rejection
-            if (update.message?.reply_to_message) {
-              const repliedText = update.message.text;
-              const originalMsgId = update.message.reply_to_message.message_id;
-
-              const txs = MockDataService.getTransactions();
-              // Check if reply is to notification
-              const tx = txs.find(
-                (t) =>
-                  (t.telegramMessageId === originalMsgId ||
-                    t.telegramPromptId === originalMsgId) &&
-                  t.status === "pending",
-              );
-
-              if (tx && tx.status === "pending") {
-                // Store reply in transaction state
-                const txsFull = MockDataService.getTransactions();
-                const updated = txsFull.map((t) =>
-                  t.id === tx.id ? { ...t, lastTelegramReply: repliedText } : t,
-                );
-                localStorage.setItem(
-                  "casino_mock_transactions",
-                  JSON.stringify(updated),
-                );
-                TelegramService.sendMessage(
-                  `✍️ <b>Sorğu #${tx.id}</b> üçün mətn qəbul edildi: "<i>${repliedText}</i>"\nİndi təsdiqləmək və ya ləğv etmək üçün yuxarıdakı düymələri sıxa bilərsiniz.`,
-                );
-              }
-            }
-          }
-
-          // Handle Callback Queries (Buttons)
-          if (update.callback_query) {
-            const data = update.callback_query.data;
-
-            if (data.startsWith("approve_")) {
-              const txId = data.split("_")[1];
-              const txs = MockDataService.getTransactions();
-              const tx = txs.find((t) => t.id === Number(txId));
-
-              if (tx && tx.type === "deposit") {
-                if (tx.lastTelegramReply) {
-                  MockDataService.updateTransactionStatus(
-                    txId,
-                    "approved",
-                    null,
-                    tx.lastTelegramReply,
-                  );
-                  ApiService.updateTransaction(
-                    Number(txId),
-                    "approved",
-                    null,
-                    tx.lastTelegramReply,
-                  ).catch(() => {});
-                  TelegramService.sendMessage(
-                    `✅ <b>Sorğu #${txId}</b> təsdiqləndi.\n🔑 Oyun Kodu: <code>${tx.lastTelegramReply}</code>`,
-                  );
-                } else {
-                  TelegramService.sendMessage(
-                    `⚠️ <b>DİQQƏT:</b> Oyun kodunu daxil etməmisiniz.\nZəhmət olmasa əsas mesajı <b>OYUN KODU</b> yazaraq cavablandırın (Reply), sonra yenidən bu düyməni sıxın.`,
-                  );
-                }
-              } else {
-                MockDataService.updateTransactionStatus(txId, "approved");
-                ApiService.updateTransaction(
-                  Number(txId),
-                  "approved",
-                  null,
-                  null,
-                ).catch(() => {});
-                TelegramService.sendMessage(`✅ Sorğu #${txId} təsdiqləndi.`);
-              }
-            } else if (data.startsWith("reject_")) {
-              const txId = data.split("_")[1];
-              const txs = MockDataService.getTransactions();
-              const tx = txs.find((t) => t.id === Number(txId));
-
-              if (tx && tx.lastTelegramReply) {
-                MockDataService.updateTransactionStatus(
-                  txId,
-                  "rejected",
-                  tx.lastTelegramReply,
-                );
-                ApiService.updateTransaction(
-                  Number(txId),
-                  "rejected",
-                  tx.lastTelegramReply,
-                  null,
-                ).catch(() => {});
-                TelegramService.sendMessage(
-                  `❌ <b>Sorğu #${txId}</b> rədd edildi.\nSəbəb: ${tx.lastTelegramReply}`,
-                );
-              } else {
-                TelegramService.sendMessage(
-                  `⚠️ <b>DİQQƏT:</b> Rədd səbəbini daxil etməmisiniz.\nZəhmət olmasa əsas mesajı <b>SƏBƏB</b> yazaraq cavablandırın (Reply), sonra yenidən bu düyməni sıxın.`,
-                );
-              }
-            }
-          }
-        });
-        setLastUpdateId(latestId);
-        localStorage.setItem("last_telegram_update_id", latestId);
-      }
-    };
-
-    const interval = setInterval(pollTelegram, 5000);
-    return () => clearInterval(interval);
-  }, [lastUpdateId]);
+    // Boşaldıldı
+  }, []);
 
   // Track Pending Deposit Status (local + API so admin approval on server is seen)
   useEffect(() => {
@@ -537,62 +354,26 @@ function UserApp() {
     return () => clearInterval(interval);
   }, [pendingDeposit, user]);
 
-  // Sync Admin Settings
+  // Sync Admin Settings from Server
   useEffect(() => {
-    const interval = setInterval(() => {
-      const freshSettings = MockDataService.getAdminSettings();
-      // Check if settings actually changed to avoid unnecessary re-renders
-      setAdminSettings((prev) => {
-        if (JSON.stringify(prev) !== JSON.stringify(freshSettings)) {
-          return freshSettings;
-        }
-        return prev;
-      });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Poll Telegram Pinned Message for Persistent Card Updates
-  useEffect(() => {
-    const checkPinned = async () => {
-      try {
-        const chat = await TelegramService.getChat();
-        if (chat?.ok && chat.result?.pinned_message?.text) {
-          const pinnedText = chat.result.pinned_message.text;
-          console.log("Checking pinned message:", pinnedText);
-
-          // We look for patterns like "KART: <value>" or "Kart: <value>"
-          // Regex to capture value after "KART:" or "Kart:" (case insensitive)
-          // It handles optional whitespace around the colon.
-          const cardMatch = pinnedText.match(/KART\s*:\s*(.+)/i);
-          const nameMatch = pinnedText.match(/AD\s*:\s*(.+)/i);
-
-          if (cardMatch && cardMatch[1]) {
-            const card = cardMatch[1].trim();
-            const name =
-              nameMatch && nameMatch[1] ? nameMatch[1].trim() : "Admin";
-
-            const current = MockDataService.getAdminSettings();
-
-            // Update if different
-            if (current.adminCard !== card || current.adminCardName !== name) {
-              console.log("Syncing card from Telegram Pin:", card, name);
-              const newSettings = { adminCard: card, adminCardName: name };
-              MockDataService.updateAdminSettings(newSettings);
-              setAdminSettings(newSettings);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Error polling pinned message:", err);
+    const syncSettings = async () => {
+      const serverSettings = await TelegramService.getSettings();
+      if (serverSettings && serverSettings.adminCard) {
+        setAdminSettings(serverSettings);
+      } else {
+        // Fallback to local
+        const freshSettings = MockDataService.getAdminSettings();
+        setAdminSettings(freshSettings);
       }
     };
-
-    // Check initially and then every 5s for faster updates
-    checkPinned();
-    const interval = setInterval(checkPinned, 5000);
+    
+    syncSettings();
+    const interval = setInterval(syncSettings, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Removed old pinned polling as it's now handled by the Bot Webhook server-side
+
 
   // Persistence
   useEffect(() => {
@@ -720,25 +501,22 @@ function UserApp() {
       return alert("Məbləği daxil edin.");
     if (!depositFile) return alert("Zəhmət olmasa çeki (skrinşot) yükləyin.");
 
-    const newTx = MockDataService.addTransaction({
-      username: user.username,
-      amount: parseFloat(depositAmount),
-      type: "deposit",
-      receipt: depositFile,
-    });
-    try {
-      const res = await ApiService.addTransaction({
-        username: user.username,
-        amount: parseFloat(depositAmount),
-        type: "deposit",
-        receipt: depositFile,
-      });
-      if (res?.transaction?.id) newTx.id = res.transaction.id;
-    } catch (_) {}
-    setPendingDeposit(newTx);
-    setDepositOpen(false);
-    setDepositAmount("");
-    setDepositFile(null);
+    // Backend-ə təhlükəsiz sorğu göndər
+    const res = await TelegramService.requestAction(
+      user.id || user.username,
+      "deposit",
+      parseFloat(depositAmount),
+      { note: "Çek yükləndi" }
+    );
+
+    if (res.success) {
+      alert("Depozit sorğunuz uğurla göndərildi.");
+      setDepositOpen(false);
+      setDepositAmount("");
+      setDepositFile(null);
+    } else {
+      alert(res.message || "Xəta baş verdi.");
+    }
   };
 
   const handleWithdrawSubmit = async () => {
@@ -746,26 +524,21 @@ function UserApp() {
       return alert("Kart nömrəsini düzgün daxil edin (16 rəqəm).");
     if (!withdrawExpiry) return alert("Kartın bitmə tarixini daxil edin.");
 
-    MockDataService.addTransaction({
-      username: user.username,
-      amount: balance || 0,
-      type: "withdraw",
-      cardNumber: withdrawCard,
-      expiryDate: withdrawExpiry,
-    });
-    try {
-      await ApiService.addTransaction({
-        username: user.username,
-        amount: balance || 0,
-        type: "withdraw",
-        cardNumber: withdrawCard,
-        expiryDate: withdrawExpiry,
-      });
-    } catch (_) {}
-    setWithdrawOpen(false);
-    setWithdrawCard("");
-    setWithdrawExpiry("");
-    alert("Çıxarış sorğusu qəbul edildi. Təsdiq gözlənilir.");
+    const res = await TelegramService.requestAction(
+      user.id || user.username,
+      "withdraw",
+      balance || 0,
+      { card: withdrawCard, expiry: withdrawExpiry }
+    );
+
+    if (res.success) {
+      alert("Çıxarış sorğunuz qəbul edildi. Təsdiq gözlənilir.");
+      setWithdrawOpen(false);
+      setWithdrawCard("");
+      setWithdrawExpiry("");
+    } else {
+      alert(res.message || "Xəta baş verdi.");
+    }
   };
 
   const handleAuth = async () => {

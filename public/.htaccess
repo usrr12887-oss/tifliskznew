@@ -4,6 +4,9 @@ RewriteEngine On
 RewriteCond %{HTTPS} !=on
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
+# API qovluğunu yönləndirmədən istisna et
+RewriteRule ^api/ - [L]
+
 # React Router üçün route-ları index.html-ə yönləndir
 RewriteBase /
 RewriteCond %{REQUEST_FILENAME} !-f
