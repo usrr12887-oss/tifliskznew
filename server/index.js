@@ -4,48 +4,27 @@ const cors = require('cors');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
-const multer = require('multer'); // Fayl yükləmə üçün
+const multer = require('multer');
 const FormData = require('form-data');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 const PORT = process.env.PORT || 3001;
 
-// Məlumatları saxlamaq üçün direktoriyanı yarat
-const DATA_DIR = path.join(__dirname, 'data');
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
-
-const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
-const REQUESTS_FILE = path.join(DATA_DIR, 'requests.json');
-
-// Yardımçı funksiyalar
-const getSettings = () => {
-    if (!fs.existsSync(SETTINGS_FILE)) return { adminCard: "0000 0000 0000 0000", adminCardName: "Admin" };
-    return JSON.parse(fs.readFileSync(SETTINGS_FILE));
-};
-const saveSettings = (data) => fs.writeFileSync(SETTINGS_FILE, JSON.stringify(data, null, 2));
-
-const getRequests = () => {
-    if (!fs.existsSync(REQUESTS_FILE)) return {};
-    return JSON.parse(fs.readFileSync(REQUESTS_FILE));
-};
-const saveRequest = (id, data) => {
-    const reqs = getRequests();
-    reqs[id] = data;
-    fs.writeFileSync(REQUESTS_FILE, JSON.stringify(reqs, null, 2));
-};
+// Render-də müvəqqəti saxlama (Restartda sıfırlanacaq, amma daha sürətlidir)
+let SETTINGS = { adminCard: "0000 0000 0000 0000", adminCardName: "Admin" };
+let REQUESTS = {};
 
 app.use(cors());
 app.use(express.json());
 
-// 1. API: Kart məlumatlarını gətir
-app.get('/api/settings', (req, res) => res.json(getSettings()));
+// API: Ayarları gətir
+app.get('/api/settings', (req, res) => res.json(SETTINGS));
 
-// 2. API: Müştəri tərəfindən Depozit/Çıxarış göndərilməsi
+// API: Depozit/Çıxarış göndərilməsi
 app.post('/api/action', upload.single('photo'), async (req, res) => {
     const { userId, type, amount, data } = req.body;
     const requestId = Date.now().toString();
-    const settings = getSettings();
 
     try {
         let message = `🔔 <b>YENİ ${type === 'deposit' ? 'DEPOZİT' : 'ÇIXARIŞ'} SORĞUSU</b>\n\n`;
@@ -59,32 +38,26 @@ app.post('/api/action', upload.single('photo'), async (req, res) => {
         }
         
         message += `\n🆔 Sorğu ID: <code>${requestId}</code>\n`;
-        message += `\n📝 <i>Təsdiq etmək üçün OYUN KODU yazaraq bu mesajı reply edin.</i>\n`;
-        message += `📝 <i>Rədd etmək üçün SƏBƏB yazaraq bu mesajı reply edin və əksinə düyməni sıxın.</i>`;
+        message += `\n📝 <b>TƏSDİQ ÜÇÜN:</b> Bu mesajı <code>OYUN KODU</code> yazaraq REPLY edin, sonra düyməni sıxın.`;
 
         let tgRes;
+        const inline_keyboard = [[
+            { text: "✅ TƏSDİQLƏ", callback_data: `approve_${requestId}` },
+            { text: "❌ LƏĞV ET", callback_data: `reject_${requestId}` }
+        ]];
+
         if (req.file && type === 'deposit') {
-            // Şəkil ilə göndər
             const form = new FormData();
             form.append('chat_id', process.env.TELEGRAM_GROUP_ID);
             form.append('photo', fs.createReadStream(req.file.path));
             form.append('caption', message);
             form.append('parse_mode', 'HTML');
-            form.append('reply_markup', JSON.stringify({
-                inline_keyboard: [
-                    [{ text: "✅ TƏSDİQLƏ", callback_data: `approve_${requestId}` },
-                     { text: "❌ LƏĞV ET", callback_data: `reject_${requestId}` }]
-                ]
-            }));
+            form.append('reply_markup', JSON.stringify({ inline_keyboard }));
 
-            const resp = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-                method: 'POST',
-                body: form
-            });
+            const resp = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPhoto`, { method: 'POST', body: form });
             tgRes = await resp.json();
-            fs.unlinkSync(req.file.path); // Müvəqqəti faylı sil
+            fs.unlinkSync(req.file.path);
         } else {
-            // Sadə mesaj kimi göndər
             const resp = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -92,108 +65,102 @@ app.post('/api/action', upload.single('photo'), async (req, res) => {
                     chat_id: process.env.TELEGRAM_GROUP_ID,
                     text: message,
                     parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: "✅ TƏSDİQLƏ", callback_data: `approve_${requestId}` },
-                             { text: "❌ LƏĞV ET", callback_data: `reject_${requestId}` }]
-                        ]
-                    }
+                    reply_markup: { inline_keyboard }
                 })
             });
             tgRes = await resp.json();
         }
 
-        saveRequest(requestId, { userId, type, amount, status: 'pending', tgMsgId: tgRes.result?.message_id });
+        REQUESTS[requestId] = { userId, type, amount, status: 'pending', tgMsgId: tgRes.result?.message_id };
         res.json({ success: true, requestId });
     } catch (error) {
-        console.error(error);
+        console.error("Action Error:", error);
         res.status(500).json({ success: false });
     }
 });
 
-// 3. API: Sorğunun statusunu yoxla (Frontend üçün)
 app.get('/api/status/:id', (req, res) => {
-    const reqs = getRequests();
-    const request = reqs[req.params.id];
-    res.json(request || { status: 'not_found' });
+    res.json(REQUESTS[req.params.id] || { status: 'not_found' });
 });
 
-// 4. Telegram Webhook (Admin cavabları və düymələr üçün)
+// WEBHOOK HANDLER
 app.post('/webhook', async (req, res) => {
     const update = req.body;
-
-    // A. Düymə sıxıldıqda (Approve/Reject)
+    
+    // 1. Düymələr (Callback Query)
     if (update.callback_query) {
-        const [action, requestId] = update.callback_query.data.split('_');
-        const reqs = getRequests();
-        const request = reqs[requestId];
+        const data = update.callback_query.data;
+        const [action, requestId] = data.split('_');
+        const reqItem = REQUESTS[requestId];
 
-        if (!request) return res.sendStatus(200);
-
-        if (action === 'approve') {
-           if (!request.adminCode) {
-               return await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
-                   method: 'POST',
-                   headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({
-                       callback_query_id: update.callback_query.id,
-                       text: "⚠️ Əvvəlcə oyun kodunu reply olaraq yazın!",
-                       show_alert: true
-                   })
-               });
-           }
-           request.status = 'approved';
-        } else {
-           request.status = 'rejected';
-           request.reason = request.adminCode || "Məlumat düzgün deyil.";
-        }
-
-        saveRequest(requestId, request);
-        
-        // Telegram-dakı mesajı yenilə
-        await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: process.env.TELEGRAM_GROUP_ID,
-                text: `📌 Sorğu #${requestId} ${request.status === 'approved' ? 'TƏSDİQLƏNDİ ✅' : 'RƏDD EDİLDİ ❌'}\nOyun Kodu/Səbəb: ${request.adminCode || request.reason}`
-            })
-        });
-    }
-
-    // B. Admin reply yazdıqda (Oyun kodu və ya Səbəb)
-    if (update.message && update.message.reply_to_message) {
-        const text = update.message.text;
-        const replyToId = update.message.reply_to_message.message_id;
-        
-        // Kartı dəyişmək əmri
-        if (text.startsWith('/kart')) {
-            const parts = text.split(' ');
-            if (parts.length >= 2) {
-                saveSettings({ adminCard: parts[1], adminCardName: parts.slice(2).join(' ') || "Admin" });
-                return res.sendStatus(200);
+        if (reqItem) {
+            if (action === 'approve') {
+                if (!reqItem.adminCode) {
+                    await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ callback_query_id: update.callback_query.id, text: "⚠️ Əvvəlcə oyun kodunu reply edin!", show_alert: true })
+                    });
+                    return res.sendStatus(200);
+                }
+                reqItem.status = 'approved';
+            } else {
+                reqItem.status = 'rejected';
+                reqItem.reason = reqItem.adminCode || "Məlumatlar yanlışdır.";
             }
-        }
 
-        const reqs = getRequests();
-        const requestId = Object.keys(reqs).find(id => reqs[id].tgMsgId === replyToId);
-        
-        if (requestId) {
-            reqs[requestId].adminCode = text;
-            saveRequest(requestId, reqs[requestId]);
-            // Müvəqqəti cavab ver
+            // Düymələri sil və statusu yaz
+            await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/editMessageReplyMarkup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: process.env.TELEGRAM_GROUP_ID, message_id: update.callback_query.message.message_id, reply_markup: { inline_keyboard: [] } })
+            });
+
             await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: process.env.TELEGRAM_GROUP_ID,
-                    text: `✍️ Qeyd alındı: "${text}". İndi yuxarıdakı düyməni sıxaraq tamamlayın.`
-                })
+                body: JSON.stringify({ chat_id: process.env.TELEGRAM_GROUP_ID, text: `✅ Sorğu #${requestId} tamamlandı: ${reqItem.status.toUpperCase()}`, reply_to_message_id: update.callback_query.message.message_id })
             });
+        }
+        return res.sendStatus(200);
+    }
+
+    // 2. Mesajlar və Əmrlər
+    if (update.message) {
+        const text = update.message.text || "";
+
+        // /kart əmri (HƏR YERDƏ İŞLƏYİR)
+        if (text.startsWith('/kart')) {
+            const parts = text.split(' ');
+            if (parts.length >= 2) {
+                SETTINGS.adminCard = parts[1];
+                SETTINGS.adminCardName = parts.slice(2).join(' ') || "Admin";
+                await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: process.env.TELEGRAM_GROUP_ID, text: `✅ Kart yeniləndi:\n💳 ${SETTINGS.adminCard}\n👤 ${SETTINGS.adminCardName}` })
+                });
+            }
+            return res.sendStatus(200);
+        }
+
+        // Reply (Oyun kodu yazıldıqda)
+        if (update.message.reply_to_message) {
+            const replyToId = update.message.reply_to_message.message_id;
+            const requestId = Object.keys(REQUESTS).find(id => REQUESTS[id].tgMsgId === replyToId);
+            
+            if (requestId) {
+                REQUESTS[requestId].adminCode = text;
+                await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: process.env.TELEGRAM_GROUP_ID, text: `✍️ Kod qeydə alındı: "${text}". İndi TƏSDİQLƏ düyməsini sıxa bilərsiniz.`, reply_to_message_id: update.message.message_id })
+                });
+            }
         }
     }
 
     res.sendStatus(200);
 });
 
-app.listen(PORT, () => console.log(`Server started on ${PORT}`));
+app.listen(PORT, () => console.log(`Server is active on ${PORT}`));
