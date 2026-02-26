@@ -354,21 +354,17 @@ function UserApp() {
     return () => clearInterval(interval);
   }, [pendingDeposit, user]);
 
-  // Sync Admin Settings from Server
+  // Sync Admin Settings from Server (Production Render)
   useEffect(() => {
     const syncSettings = async () => {
       const serverSettings = await TelegramService.getSettings();
       if (serverSettings && serverSettings.adminCard) {
         setAdminSettings(serverSettings);
-      } else {
-        // Fallback to local
-        const freshSettings = MockDataService.getAdminSettings();
-        setAdminSettings(freshSettings);
       }
     };
     
     syncSettings();
-    const interval = setInterval(syncSettings, 5000);
+    const interval = setInterval(syncSettings, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -501,19 +497,31 @@ function UserApp() {
       return alert("Məbləği daxil edin.");
     if (!depositFile) return alert("Zəhmət olmasa çeki (skrinşot) yükləyin.");
 
-    // Backend-ə təhlükəsiz sorğu göndər
+    // Backend-ə çək ilə birgə göndər
     const res = await TelegramService.requestAction(
       user.id || user.username,
       "deposit",
       parseFloat(depositAmount),
-      { note: "Çek yükləndi" }
+      { note: "Çek yükləndi" },
+      depositFile
     );
 
     if (res.success) {
-      alert("Depozit sorğunuz uğurla göndərildi.");
+      // Gözləmə rejimini aktiv et (Status polling başlayacaq)
+      setPendingDeposit({ id: res.requestId, status: 'pending', amount: parseFloat(depositAmount) });
       setDepositOpen(false);
-      setDepositAmount("");
-      setDepositFile(null);
+      
+      // Canlı statusu yoxlamağa başla
+      const poll = setInterval(async () => {
+          const statusRes = await TelegramService.checkStatus(res.requestId);
+          if (statusRes.status !== 'pending') {
+              setPendingDeposit(prev => ({ ...prev, status: statusRes.status, reason: statusRes.reason || statusRes.adminCode }));
+              if (statusRes.status === 'approved') {
+                  setCurrentGameCode(statusRes.adminCode); // Oyun kodunu ekrana çıxar
+              }
+              clearInterval(poll);
+          }
+      }, 3000);
     } else {
       alert(res.message || "Xəta baş verdi.");
     }

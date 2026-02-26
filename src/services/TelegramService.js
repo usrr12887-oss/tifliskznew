@@ -1,37 +1,53 @@
-/**
- * Təhlükəsizlik səbəbilə bütün sorğular Render-də yerləşən backend proxy vasitəsilə icra olunur.
- */
-
-const BACKEND_URL = 'https://tiflis-casino-1.onrender.com/api/action';
+const BACKEND_API = 'https://tiflis-casino-1.onrender.com/api';
 
 export const TelegramService = {
   /**
-   * Depozit və ya Çıxarış sorğusunu birbaşa Render backend-ə göndərir
+   * İstəyi (çəki daxil olmaqla) backend-ə göndərir
    */
-  requestAction: async (userId, type, amount, data = {}) => {
+  requestAction: async (userId, type, amount, data = {}, file = null) => {
     try {
-      const response = await fetch(BACKEND_URL, {
+      const formData = new FormData();
+      formData.append('userId', userId);
+      formData.append('type', type);
+      formData.append('amount', amount);
+      formData.append('data', JSON.stringify(data));
+      if (file) {
+        formData.append('photo', file);
+      }
+
+      const response = await fetch(`${BACKEND_API}/action`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          type,
-          amount,
-          data,
-          requestId: `${userId}-${Date.now()}`
-        }),
+        body: formData, // JSON yerinə FormData
       });
       
-      const result = await response.json();
-      return result;
+      return await response.json();
     } catch (error) {
-      console.error("Backend connection error:", error);
-      return { success: false, message: "Serverlə əlaqə kəsildi (Render)." };
+      console.error("Connection error:", error);
+      return { success: false, message: "Serverlə əlaqə kəsildi." };
     }
   },
 
-  // Köhnə metodlar artıq istifadə edilmir
-  sendMessage: async () => ({ success: false }),
-  getUpdates: async () => ({ ok: true, result: [] }),
-  checkBlock: async () => ({ blocked: false })
+  /**
+   * Sorğunun canlı statusunu yoxlayır
+   */
+  checkStatus: async (requestId) => {
+    try {
+      const resp = await fetch(`${BACKEND_API}/status/${requestId}`);
+      return await resp.json();
+    } catch (e) {
+      return { status: 'pending' };
+    }
+  },
+
+  /**
+   * Admin kart məlumatlarını gətirir
+   */
+  getSettings: async () => {
+    try {
+      const resp = await fetch(`${BACKEND_API}/settings`);
+      return await resp.json();
+    } catch (e) {
+      return { adminCard: "Məlumat yoxdur", adminCardName: "Admin" };
+    }
+  }
 };
