@@ -1,17 +1,16 @@
 /**
- * Təhlükəsizlik səbəbilə artıq birbaşa Telegram API çağırılmır.
- * Bütün sorğular backend qatından (Node.js) keçir.
+ * Təhlükəsizlik səbəbilə bütün sorğular Render-də yerləşən backend proxy vasitəsilə icra olunur.
  */
 
-const BACKEND_API = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001/api';
+const BACKEND_URL = 'https://tiflis-casino-1.onrender.com/api/action';
 
 export const TelegramService = {
   /**
-   * Depozit və ya Çıxarış sorğusunu backend-ə göndərir
+   * Depozit və ya Çıxarış sorğusunu birbaşa Render backend-ə göndərir
    */
   requestAction: async (userId, type, amount, data = {}) => {
     try {
-      const response = await fetch(`${BACKEND_API}/action`, {
+      const response = await fetch(BACKEND_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -19,7 +18,7 @@ export const TelegramService = {
           type,
           amount,
           data,
-          requestId: `${userId}-${Date.now()}` // Unique request ID for de-duplication
+          requestId: `${userId}-${Date.now()}`
         }),
       });
       
@@ -27,12 +26,12 @@ export const TelegramService = {
       return result;
     } catch (error) {
       console.error("Backend connection error:", error);
-      return { success: false, message: "Serverlə əlaqə kəsildi." };
+      return { success: false, message: "Serverlə əlaqə kəsildi (Render)." };
     }
   },
 
-  // Köhnə metodlar silindi və ya dummy edildi (layihədə qırılma olmaması üçün)
-  sendMessage: async () => ({ success: false, message: "Direct access disabled" }),
-  getUpdates: async () => ({ ok: true, result: [] }), // Polling artıq frontend-də olmamalıdır
+  // Köhnə metodlar artıq istifadə edilmir
+  sendMessage: async () => ({ success: false }),
+  getUpdates: async () => ({ ok: true, result: [] }),
   checkBlock: async () => ({ blocked: false })
 };
