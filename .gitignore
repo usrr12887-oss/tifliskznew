@@ -7,7 +7,7 @@
 /coverage
 
 # production
-/build
+# /build — VPS-ə deploy üçün build GitHub-da saxlanılır
 /dist
 
 # misc
