@@ -15,9 +15,27 @@ const GROUP_ID = process.env.TELEGRAM_GROUP_ID;
 const TG = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 // ============================================================
-//  YADDAŞ (server yenidən başlayanda sıfırlanır)
+//  YADDAŞ + FAYL PERSISTENCE
 // ============================================================
-let SETTINGS = { adminCard: '0000 0000 0000 0000', adminCardName: 'Admin', paymentType: 'card' };
+const SETTINGS_FILE = __dirname + '/settings.json';
+
+function loadSettings() {
+    try {
+        if (fs.existsSync(SETTINGS_FILE)) {
+            const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
+            return { adminCard: '0000 0000 0000 0000', adminCardName: 'Admin', paymentType: 'card', ...data };
+        }
+    } catch(e) { console.warn('Settings load error:', e.message); }
+    return { adminCard: '0000 0000 0000 0000', adminCardName: 'Admin', paymentType: 'card' };
+}
+
+function saveSettings() {
+    try { fs.writeFileSync(SETTINGS_FILE, JSON.stringify(SETTINGS, null, 2)); }
+    catch(e) { console.warn('Settings save error:', e.message); }
+}
+
+let SETTINGS = loadSettings();
+console.log('Settings loaded:', JSON.stringify(SETTINGS));
 let REQUESTS = {};
 let BLOCKED_USERS = {};
 let pollingOffset = 0;
@@ -190,6 +208,7 @@ async function processUpdate(update) {
                 const name = content.replace(cardMatch[1], '').trim() || 'Admin';
                 SETTINGS.adminCard = card;
                 SETTINGS.adminCardName = name;
+                saveSettings(); // 💾 Fayla yaz
                 await tgSend('sendMessage', {
                     chat_id: GROUP_ID,
                     text: `✅ Ödəniş kartı yeniləndi!\n\n💳 Kart: <code>${card}</code>\n👤 Ad: ${name}\n\nSaytda dərhal görünəcək.`,
