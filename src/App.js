@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import AdminPanel from "./AdminPanel";
+import { API_URL } from "./config";
 import {
   Menu,
   X,
@@ -344,7 +345,7 @@ function UserApp() {
       try {
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
         const reg = await navigator.serviceWorker.ready;
-        const keyRes = await fetch('http://localhost:3001/api/push/vapid-key').then(r => r.json()).catch(() => null);
+        const keyRes = await fetch(`${API_URL}/push/vapid-key`).then(r => r.json()).catch(() => null);
         if (!keyRes?.publicKey) return;
         // VAPID key çevir
         const b64 = keyRes.publicKey;
@@ -354,7 +355,7 @@ function UserApp() {
         const vapidKey = Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 
         const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
-        fetch('http://localhost:3001/api/push/subscribe', {
+        fetch(`${API_URL}/push/subscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: user.username, subscription: sub.toJSON() })

@@ -35,11 +35,11 @@ try {
 //  CORS
 // ============================================================
 const allowedOrigins = [
-    process.env.ALLOWED_ORIGIN,
+    ...(process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean),
     'http://localhost:3000',
     'http://localhost:3005',
     'http://localhost:3006',
-].filter(Boolean);
+];
 
 app.use(cors({
     origin: (origin, callback) => {

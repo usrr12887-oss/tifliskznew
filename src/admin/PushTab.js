@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-const API = "http://localhost:3001/api/admin";
+import { ADMIN_API } from "../config";
+const API = ADMIN_API;
+
 
 export default function PushTab({ showToast }) {
   const [subscribers, setSubscribers] = useState([]);

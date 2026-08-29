@@ -5,8 +5,9 @@ import BotTab from "./admin/BotTab";
 import RedirectTab from "./admin/RedirectTab";
 import ReportTab from "./admin/ReportTab";
 import PushTab from "./admin/PushTab";
+import { ADMIN_API } from "./config";
 
-const API = "http://localhost:3001/api/admin";
+const API = ADMIN_API;
 const DEFAULT_PASS = "admin123";
 
 function StatCard({ label, value, color = "amber" }) {
