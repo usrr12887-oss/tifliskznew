@@ -1,4 +1,4 @@
-import { TelegramService } from "./TelegramService";
+
 
 const MOCK_USERS_KEY = "casino_mock_users";
 const MOCK_TRANSACTIONS_KEY = "casino_mock_transactions";
@@ -74,52 +74,18 @@ export const MockDataService = {
 
   addTransaction: (tx) => {
     const txs = MockDataService.getTransactions();
-    // Save only filename in storage to avoid serialization issues
-    const storageTx = { ...tx, id: Date.now(), status: "pending", date: new Date().toISOString() };
-    if (tx.receipt instanceof File) {
-      storageTx.receipt = tx.receipt.name;
+    const storageTx = {
+      ...tx,
+      id: Date.now(),
+      status: tx.status || "pending",
+      date: new Date().toISOString()
+    };
+    // File obyektini adına çevir (localStorage-də saxlamaq üçün)
+    if (storageTx.receipt instanceof File) {
+      storageTx.receipt = storageTx.receipt.name;
     }
     txs.push(storageTx);
     localStorage.setItem(MOCK_TRANSACTIONS_KEY, JSON.stringify(txs));
-
-    const users = MockDataService.getUsers();
-    const user = users.find(u => u.username === tx.username);
-
-    // Telegram Notification
-    const typeLabel = tx.type === "deposit" ? "DEPOZİT" : "ÇIXARIŞ";
-    const emoji = tx.type === "deposit" ? "📥" : "📤";
-    const details = tx.type === "deposit" 
-      ? `\n<b>Çek:</b> ${storageTx.receipt || "Yoxdur"}` + (user?.bonusPercent ? `\n<b>Tətbiq ediləcək Bonus:</b> ${user.bonusPercent}%` : "")
-      : `\n<b>Oyun Kodu:</b> <code>${user?.gameCode || "Yoxdur"}</code>\n<b>Kart:</b> ${tx.cardNumber}\n<b>Tarix:</b> ${tx.expiryDate}`;
-
-    const message = `${emoji} <b>YENİ ${typeLabel} SORĞUSU</b>\n\n` +
-      `<b>İstifadəçi:</b> ${tx.username}\n` +
-      `<b>Müştəri ID:</b> ${user?.id || "Yoxdur"}\n` +
-      `<b>Məbləğ:</b> ${tx.amount} AZN` +
-      details +
-      `\n\n<b>Status:</b> Gözləyir` +
-      (tx.type === "deposit" ? `\n\n<i>⚠️ Zəhmət olmasa təsdiqləyərkən oyun kodunu daxil edin.</i>` : "");
-
-    const buttons = [
-      [
-        { text: "✅ Təsdiqlə", callback_data: `approve_${storageTx.id}` },
-        { text: "❌ Ləğv et", callback_data: `reject_${storageTx.id}` }
-      ]
-    ];
-
-    const telegramPromise = (tx.type === "deposit" && tx.receipt instanceof File)
-      ? TelegramService.sendPhoto(message, tx.receipt, buttons)
-      : TelegramService.sendMessage(message, buttons);
-
-    telegramPromise.then(result => {
-      if (result && result.ok) {
-        const msgId = result.result.message_id;
-        const txs = MockDataService.getTransactions();
-        const updated = txs.map(t => t.id === storageTx.id ? { ...t, telegramMessageId: msgId } : t);
-        localStorage.setItem(MOCK_TRANSACTIONS_KEY, JSON.stringify(updated));
-      }
-    });
-
     return storageTx;
   },
 

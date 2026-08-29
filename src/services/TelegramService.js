@@ -1,4 +1,4 @@
-const BACKEND_API = 'https://tiflis-casino-1.onrender.com/api';
+const BACKEND_API = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 export const TelegramService = {
   /**
