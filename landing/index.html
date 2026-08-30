@@ -4,311 +4,111 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Tiflis Kod — Azərbaycanın №1 Oyun Platforması</title>
-<meta name="description" content="Tiflis Kod — Hər gün böyük qazanc! Slot, Crash, Klassik oyunlar. İndi qeydiyyat keç, pulsuz bonus al!">
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="description" content="Hər gün böyük qazanc! Slot, Crash, Klassik oyunlar. İndi oyna!">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--gold:#F5C518;--gold2:#FFE066;--dark:#0A0A0F;--card:#1A1A2E;--accent:#E63946;--green:#2DC653;--tg:#29B6F6}
+html,body{background:var(--dark);color:#fff;font-family:'Outfit',sans-serif;min-height:100vh;overflow-x:hidden}
 
-  :root {
-    --gold: #F5C518;
-    --gold2: #FFE066;
-    --dark: #0A0A0F;
-    --dark2: #12121A;
-    --card: #1A1A2E;
-    --accent: #E63946;
-    --green: #2DC653;
-  }
+/* BG */
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.pt{position:absolute;border-radius:50%;opacity:.15;animation:fl linear infinite}
+@keyframes fl{0%{transform:translateY(110vh) rotate(0deg);opacity:0}10%{opacity:.2}90%{opacity:.15}100%{transform:translateY(-10vh) rotate(720deg);opacity:0}}
 
-  html, body {
-    background: var(--dark);
-    color: #fff;
-    font-family: 'Outfit', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+.page{position:relative;z-index:1}
 
-  /* ── PARTICLES BACKGROUND ── */
-  #bg {
-    position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
-  }
-  .particle {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.15;
-    animation: float linear infinite;
-  }
-  @keyframes float {
-    0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
-    10%  { opacity: 0.2; }
-    90%  { opacity: 0.15; }
-    100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
-  }
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:rgba(10,10,15,.9);backdrop-filter:blur(12px);border-bottom:1px solid rgba(245,197,24,.15);position:sticky;top:0;z-index:100}
+.logo{font-size:20px;font-weight:900;background:linear-gradient(135deg,#F5C518,#FFE066);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(45,198,83,.12);border:1px solid #2DC653;border-radius:20px;padding:5px 11px;font-size:11px;font-weight:700;color:#2DC653}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#2DC653;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-  /* ── MAIN CONTAINER ── */
-  .page { position: relative; z-index: 1; min-height: 100vh; }
+/* HERO */
+.hero{text-align:center;padding:28px 18px 20px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(245,197,24,.07) 0%,transparent 70%)}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.3);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:var(--gold);margin-bottom:16px}
+.hero h1{font-size:clamp(30px,8vw,52px);font-weight:900;line-height:1.1;margin-bottom:10px}
+.hero h1 span{background:linear-gradient(135deg,#F5C518,#FFE066);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:14px;color:rgba(255,255,255,.65);max-width:300px;margin:0 auto 20px;line-height:1.6}
 
-  /* ── HEADER ── */
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 20px;
-    background: rgba(10,10,15,0.85);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(245,197,24,0.15);
-    position: sticky; top: 0; z-index: 100;
-  }
-  .logo {
-    font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
-    background: linear-gradient(135deg, #F5C518, #FFE066, #F5C518);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .live-badge {
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(46,196,83,0.15);
-    border: 1px solid #2DC653;
-    border-radius: 20px; padding: 5px 12px;
-    font-size: 12px; font-weight: 700; color: #2DC653;
-    animation: pulse-green 2s infinite;
-  }
-  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #2DC653; animation: blink 1s infinite; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  @keyframes pulse-green { 0%,100%{box-shadow:0 0 0 0 rgba(45,198,83,0.3)} 50%{box-shadow:0 0 0 6px rgba(45,198,83,0)} }
+/* JACKPOT */
+.jackpot-card{background:linear-gradient(135deg,#1A1A2E,#16213E);border:1px solid rgba(245,197,24,.3);border-radius:18px;padding:20px 18px;margin:0 16px 18px;text-align:center;box-shadow:0 0 40px rgba(245,197,24,.08)}
+.jackpot-label{font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.45);text-transform:uppercase;margin-bottom:6px}
+.jackpot-amount{font-size:clamp(40px,10vw,68px);font-weight:900;background:linear-gradient(135deg,#F5C518,#FFE066);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:glow 2s ease-in-out infinite alternate;filter:drop-shadow(0 0 20px rgba(245,197,24,.4))}
+@keyframes glow{0%{filter:drop-shadow(0 0 10px rgba(245,197,24,.3))}100%{filter:drop-shadow(0 0 30px rgba(245,197,24,.7))}}
+.jackpot-sub{font-size:12px;color:rgba(255,255,255,.45);margin-top:5px}
 
-  /* ── HERO ── */
-  .hero {
-    text-align: center; padding: 32px 20px 24px;
-    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(245,197,24,0.08) 0%, transparent 70%);
-  }
-  .hero-tag {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(245,197,24,0.1); border: 1px solid rgba(245,197,24,0.3);
-    border-radius: 20px; padding: 5px 14px;
-    font-size: 12px; font-weight: 700; color: var(--gold);
-    margin-bottom: 20px; letter-spacing: 0.5px;
-  }
-  .hero h1 {
-    font-size: clamp(32px, 8vw, 58px); font-weight: 900;
-    line-height: 1.1; margin-bottom: 14px;
-    text-shadow: 0 0 40px rgba(245,197,24,0.3);
-  }
-  .hero h1 span {
-    background: linear-gradient(135deg, #F5C518, #FFE066);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  .hero p {
-    font-size: 15px; color: rgba(255,255,255,0.7);
-    max-width: 320px; margin: 0 auto 28px; line-height: 1.6;
-  }
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 16px 18px}
+.stat-item{background:var(--card);border-radius:12px;padding:12px 6px;text-align:center;border:1px solid rgba(255,255,255,.05)}
+.stat-val{font-size:18px;font-weight:800;background:linear-gradient(135deg,#F5C518,#FFE066);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,.4);margin-top:3px}
 
-  /* ── JACKPOT CARD ── */
-  .jackpot-card {
-    background: linear-gradient(135deg, #1A1A2E, #16213E);
-    border: 1px solid rgba(245,197,24,0.3);
-    border-radius: 20px; padding: 24px 20px;
-    margin: 0 20px 24px;
-    position: relative; overflow: hidden;
-    box-shadow: 0 0 40px rgba(245,197,24,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
-  }
-  .jackpot-card::before {
-    content: ''; position: absolute; inset: -50%;
-    background: radial-gradient(circle, rgba(245,197,24,0.05) 0%, transparent 60%);
-    animation: rotate-bg 8s linear infinite;
-  }
-  @keyframes rotate-bg { 100%{ transform: rotate(360deg); } }
-  .jackpot-label {
-    font-size: 11px; font-weight: 700; letter-spacing: 2px;
-    color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 8px;
-  }
-  .jackpot-amount {
-    font-size: clamp(42px, 10vw, 72px); font-weight: 900;
-    background: linear-gradient(135deg, #F5C518, #FFE066, #F5C518);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    line-height: 1; position: relative; z-index: 1;
-    text-shadow: none;
-    filter: drop-shadow(0 0 20px rgba(245,197,24,0.5));
-    animation: count-glow 2s ease-in-out infinite alternate;
-  }
-  @keyframes count-glow {
-    0%  { filter: drop-shadow(0 0 10px rgba(245,197,24,0.3)); }
-    100%{ filter: drop-shadow(0 0 30px rgba(245,197,24,0.7)); }
-  }
-  .jackpot-sub {
-    font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 6px; position: relative; z-index: 1;
-  }
+/* WIN TICKER */
+.ticker-wrap{overflow:hidden;padding:10px 0;background:rgba(245,197,24,.03);border-top:1px solid rgba(245,197,24,.07);border-bottom:1px solid rgba(245,197,24,.07);margin-bottom:18px}
+.ticker{display:flex;gap:20px;width:max-content;animation:tick 22s linear infinite}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.t-item{display:flex;align-items:center;gap:7px;white-space:nowrap;font-size:12px;color:rgba(255,255,255,.65);background:rgba(255,255,255,.04);border-radius:20px;padding:4px 12px}
+.t-item strong{color:var(--gold);font-weight:700}
 
-  /* ── STATS ROW ── */
-  .stats-row {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 10px; margin: 0 20px 24px;
-  }
-  .stat-item {
-    background: var(--card); border-radius: 14px; padding: 14px 8px;
-    text-align: center; border: 1px solid rgba(255,255,255,0.05);
-  }
-  .stat-val {
-    font-size: 20px; font-weight: 800;
-    background: linear-gradient(135deg, #F5C518, #FFE066);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  .stat-lbl { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 4px; }
+/* CTA MAIN — GOZ CARPAN */
+.cta-main{padding:0 16px 16px}
+.cta-btn-main{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:20px;background:linear-gradient(135deg,#F5C518,#F0A500,#F5C518);background-size:200%;color:#000;font-size:19px;font-weight:900;border:none;border-radius:16px;cursor:pointer;text-decoration:none;animation:shimmer 2s linear infinite,pulse-cta 1.5s ease-in-out infinite alternate;box-shadow:0 8px 40px rgba(245,197,24,.55),0 2px 0 rgba(255,255,255,.3) inset;letter-spacing:.5px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes pulse-cta{0%{box-shadow:0 8px 32px rgba(245,197,24,.4),0 0 0 0 rgba(245,197,24,.3)}100%{box-shadow:0 12px 50px rgba(245,197,24,.75),0 0 0 8px rgba(245,197,24,0)}}
+.cta-btn-main:active{transform:scale(.98)}
 
-  /* ── WIN TICKER ── */
-  .win-ticker-wrap {
-    overflow: hidden; margin: 0 0 24px;
-    padding: 12px 0;
-    background: rgba(245,197,24,0.03);
-    border-top: 1px solid rgba(245,197,24,0.08);
-    border-bottom: 1px solid rgba(245,197,24,0.08);
-  }
-  .win-ticker {
-    display: flex; gap: 24px; width: max-content;
-    animation: ticker 20s linear infinite;
-  }
-  @keyframes ticker { 0%{ transform: translateX(0) } 100%{ transform: translateX(-50%) } }
-  .win-item {
-    display: flex; align-items: center; gap: 8px; white-space: nowrap;
-    font-size: 13px; color: rgba(255,255,255,0.7);
-    background: rgba(255,255,255,0.04); border-radius: 20px; padding: 5px 14px;
-  }
-  .win-item strong { color: var(--gold); font-weight: 700; }
-  .win-item .avi { font-size: 16px; }
+/* TELEGRAM — GOZ CARPAN */
+.tg-section{padding:0 16px 18px}
+.tg-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:18px;background:linear-gradient(135deg,#0088cc,#0099dd,#0088cc);background-size:200%;color:#fff;font-size:17px;font-weight:800;border:none;border-radius:16px;cursor:pointer;text-decoration:none;animation:shimmer-tg 2.5s linear infinite,pulse-tg 1.8s ease-in-out infinite alternate;box-shadow:0 8px 32px rgba(0,136,204,.5),0 2px 0 rgba(255,255,255,.2) inset;letter-spacing:.3px}
+@keyframes shimmer-tg{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes pulse-tg{0%{box-shadow:0 8px 24px rgba(0,136,204,.4),0 0 0 0 rgba(0,136,204,.3)}100%{box-shadow:0 10px 40px rgba(0,136,204,.7),0 0 0 8px rgba(0,136,204,0)}}
+.tg-btn:active{transform:scale(.98)}
+.tg-badge{background:rgba(255,255,255,.2);border-radius:8px;padding:2px 8px;font-size:11px;margin-left:4px}
 
-  /* ── GAME PREVIEW ── */
-  .games-section { padding: 0 20px 24px; }
-  .section-title {
-    font-size: 16px; font-weight: 800; color: rgba(255,255,255,0.85);
-    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
-  }
-  .games-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .game-card {
-    background: var(--card); border-radius: 14px; overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.06);
-    aspect-ratio: 3/4;
-    position: relative;
-    transition: transform 0.2s;
-  }
-  .game-card:active { transform: scale(0.97); }
-  .game-emoji {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: 40px; gap: 6px;
-  }
-  .game-name {
-    font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.7);
-    background: rgba(0,0,0,0.5); border-radius: 8px; padding: 2px 8px;
-  }
-  .game-hot {
-    position: absolute; top: 8px; right: 8px;
-    background: var(--accent); color: #fff;
-    font-size: 9px; font-weight: 800; border-radius: 6px; padding: 2px 6px;
-    letter-spacing: 0.5px;
-  }
+/* GAMES */
+.games-section{padding:0 16px 18px}
+.section-title{font-size:15px;font-weight:800;color:rgba(255,255,255,.85);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.games-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.game-card{background:var(--card);border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.07);aspect-ratio:3/4;position:relative;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.game-card:hover{transform:scale(1.03);box-shadow:0 8px 24px rgba(245,197,24,.2)}
+.game-card img{width:100%;height:100%;object-fit:cover;display:block}
+.game-overlay{position:absolute;bottom:0;left:0;right:0;padding:6px 6px 8px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-size:10px;font-weight:700;color:rgba(255,255,255,.9);text-align:center}
+.game-hot{position:absolute;top:6px;right:6px;background:var(--accent);color:#fff;font-size:8px;font-weight:800;border-radius:6px;padding:2px 5px;letter-spacing:.5px}
+.game-new{position:absolute;top:6px;right:6px;background:#7C3AED;color:#fff;font-size:8px;font-weight:800;border-radius:6px;padding:2px 5px}
 
-  /* ── CTA BUTTON ── */
-  .cta-wrap { padding: 0 20px 20px; position: sticky; bottom: 16px; z-index: 50; }
-  .cta-btn {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 100%; padding: 18px;
-    background: linear-gradient(135deg, #F5C518, #F0A500, #F5C518);
-    background-size: 200% 100%;
-    color: #000; font-size: 18px; font-weight: 900;
-    border: none; border-radius: 16px; cursor: pointer;
-    text-decoration: none;
-    animation: btn-shimmer 2s linear infinite, btn-pulse 1.5s ease-in-out infinite alternate;
-    box-shadow: 0 8px 32px rgba(245,197,24,0.5), 0 2px 0 rgba(255,255,255,0.3) inset;
-    letter-spacing: 0.5px;
-    transition: transform 0.1s;
-  }
-  .cta-btn:active { transform: scale(0.98); }
-  @keyframes btn-shimmer {
-    0%   { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-  }
-  @keyframes btn-pulse {
-    0%   { box-shadow: 0 8px 32px rgba(245,197,24,0.4); }
-    100% { box-shadow: 0 8px 48px rgba(245,197,24,0.7); }
-  }
+/* OFFER */
+.offer-card{margin:0 16px 18px;background:linear-gradient(135deg,#1a2a1a,#122012);border:1px solid rgba(45,198,83,.25);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.offer-icon{font-size:30px}
+.offer-title{font-size:13px;font-weight:800;color:var(--green)}
+.offer-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
 
-  /* ── TELEGRAM BANNER ── */
-  .tg-banner {
-    margin: 0 20px 20px;
-    background: linear-gradient(135deg, #0088cc22, #0088cc11);
-    border: 1px solid rgba(0,136,204,0.3);
-    border-radius: 16px; padding: 16px;
-    display: flex; align-items: center; gap: 14px;
-    text-decoration: none; color: inherit;
-    transition: background 0.2s;
-  }
-  .tg-banner:active { background: rgba(0,136,204,0.15); }
-  .tg-icon { font-size: 36px; flex-shrink: 0; }
-  .tg-text .tg-title { font-size: 14px; font-weight: 800; color: #29B6F6; }
-  .tg-text .tg-sub { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 2px; }
-  .tg-arrow { margin-left: auto; font-size: 20px; color: rgba(0,136,204,0.6); }
+/* TRUST */
+.trust-row{display:flex;justify-content:center;gap:20px;padding:14px 16px;border-top:1px solid rgba(255,255,255,.05)}
+.trust-item{text-align:center;font-size:10px;color:rgba(255,255,255,.3)}
+.ti{font-size:18px;display:block;margin-bottom:3px}
 
-  /* ── TRUST BADGES ── */
-  .trust-row {
-    display: flex; justify-content: center; gap: 24px;
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-  }
-  .trust-item { text-align: center; font-size: 11px; color: rgba(255,255,255,0.35); }
-  .trust-item .ti { font-size: 20px; display: block; margin-bottom: 4px; }
+/* FOOTER */
+footer{text-align:center;padding:16px;font-size:10px;color:rgba(255,255,255,.2);border-top:1px solid rgba(255,255,255,.04)}
 
-  /* ── OFFER CARD ── */
-  .offer-card {
-    margin: 0 20px 20px;
-    background: linear-gradient(135deg, #1a2a1a, #122012);
-    border: 1px solid rgba(45,198,83,0.25);
-    border-radius: 16px; padding: 16px 18px;
-    display: flex; align-items: center; gap: 14px;
-  }
-  .offer-icon { font-size: 32px; }
-  .offer-text .offer-title { font-size: 14px; font-weight: 800; color: var(--green); }
-  .offer-text .offer-sub { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 2px; }
-
-  /* ── FOOTER ── */
-  footer {
-    text-align: center; padding: 20px;
-    font-size: 11px; color: rgba(255,255,255,0.25);
-    border-top: 1px solid rgba(255,255,255,0.04);
-  }
-
-  /* ── POPUP ON LOAD ── */
-  .popup-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-    z-index: 200; display: flex; align-items: flex-end;
-    animation: fade-in 0.3s;
-  }
-  @keyframes fade-in { from{opacity:0} to{opacity:1} }
-  .popup-sheet {
-    width: 100%; background: var(--card);
-    border-radius: 24px 24px 0 0;
-    padding: 24px 24px 40px;
-    border-top: 3px solid var(--gold);
-    animation: slide-up 0.4s cubic-bezier(0.34,1.56,0.64,1);
-    text-align: center;
-  }
-  @keyframes slide-up { from{transform:translateY(100%)} to{transform:translateY(0)} }
-  .popup-sheet .pop-emoji { font-size: 52px; margin-bottom: 12px; }
-  .popup-sheet h2 { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
-  .popup-sheet h2 span { color: var(--gold); }
-  .popup-sheet p { font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 24px; }
-  .popup-close {
-    width: 100%; padding: 16px; border-radius: 14px;
-    background: linear-gradient(135deg, #F5C518, #F0A500);
-    border: none; font-size: 16px; font-weight: 900; color: #000;
-    cursor: pointer; margin-bottom: 12px;
-  }
-  .popup-skip { font-size: 13px; color: rgba(255,255,255,0.3); cursor: pointer; }
+/* POPUP */
+.popup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:flex-end;animation:fi .3s}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.popup-sheet{width:100%;background:var(--card);border-radius:22px 22px 0 0;padding:22px 22px 38px;border-top:3px solid var(--gold);animation:su .4s cubic-bezier(.34,1.56,.64,1);text-align:center}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.pop-emoji{font-size:48px;margin-bottom:10px}
+.popup-sheet h2{font-size:20px;font-weight:900;margin-bottom:6px}
+.popup-sheet h2 span{color:var(--gold)}
+.popup-sheet p{font-size:13px;color:rgba(255,255,255,.55);margin-bottom:20px}
+.popup-close{width:100%;padding:16px;border-radius:13px;background:linear-gradient(135deg,#F5C518,#F0A500);border:none;font-size:15px;font-weight:900;color:#000;cursor:pointer;margin-bottom:10px}
+.popup-skip{font-size:12px;color:rgba(255,255,255,.28);cursor:pointer}
 </style>
 </head>
 <body>
-
-<!-- Particle Background -->
 <div id="bg"></div>
 
-<!-- Popup on Load -->
+<!-- POPUP -->
 <div class="popup-overlay" id="popup">
   <div class="popup-sheet">
     <div class="pop-emoji">🎰</div>
@@ -320,119 +120,139 @@
 </div>
 
 <div class="page">
-
-  <!-- Header -->
+  <!-- HEADER -->
   <header>
     <div class="logo">🎰 TİFLİS KOD</div>
-    <div class="live-badge"><div class="live-dot"></div>CANLI: <span id="online-count">127</span></div>
+    <div class="live-badge"><div class="live-dot"></div>CANLI: <span id="oc">127</span></div>
   </header>
 
-  <!-- Hero -->
+  <!-- HERO -->
   <section class="hero">
     <div class="hero-tag">🇦🇿 Azərbaycanın №1 Platforması</div>
     <h1>Böyük <span>Qazanc</span><br>Sənin Əlindədir</h1>
     <p>Hər gün minlərlə oyunçu Tiflis Kod-da böyük qazanclar əldə edir. Növbəti sən ol!</p>
   </section>
 
-  <!-- Jackpot Counter -->
+  <!-- JACKPOT -->
   <div class="jackpot-card">
     <div class="jackpot-label">🏆 MEGA JACKPOT</div>
-    <div class="jackpot-amount" id="jackpot">1,522 ₼</div>
+    <div class="jackpot-amount" id="jp">1,522 ₼</div>
     <div class="jackpot-sub">⚡ Hər saniyə artır — indi qazanmaq şansın var!</div>
   </div>
 
-  <!-- Stats -->
+  <!-- STATS -->
   <div class="stats-row">
-    <div class="stat-item">
-      <div class="stat-val" id="stat-users">4,812</div>
-      <div class="stat-lbl">👤 Oyunçu</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-val">50+</div>
-      <div class="stat-lbl">🎮 Oyun</div>
-    </div>
-    <div class="stat-item">
-      <div class="stat-val">24/7</div>
-      <div class="stat-lbl">⚡ Aktiv</div>
+    <div class="stat-item"><div class="stat-val" id="su">4,812</div><div class="stat-lbl">👤 Oyunçu</div></div>
+    <div class="stat-item"><div class="stat-val">50+</div><div class="stat-lbl">🎮 Oyun</div></div>
+    <div class="stat-item"><div class="stat-val">24/7</div><div class="stat-lbl">⚡ Aktiv</div></div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker-wrap">
+    <div class="ticker">
+      <div class="t-item">🎉 <strong>Kamran</strong> — 320 ₼ qazandı</div>
+      <div class="t-item">💎 <strong>Aytac</strong> — 850 ₼ qazandı</div>
+      <div class="t-item">🔥 <strong>Elvin</strong> — 1,200 ₼ qazandı</div>
+      <div class="t-item">⭐ <strong>Leyla</strong> — 430 ₼ qazandı</div>
+      <div class="t-item">🏆 <strong>Murad</strong> — 2,100 ₼ qazandı</div>
+      <div class="t-item">💰 <strong>Nigar</strong> — 670 ₼ qazandı</div>
+      <div class="t-item">🎊 <strong>Samir</strong> — 390 ₼ qazandı</div>
+      <!-- duplicate for seamless -->
+      <div class="t-item">🎉 <strong>Kamran</strong> — 320 ₼ qazandı</div>
+      <div class="t-item">💎 <strong>Aytac</strong> — 850 ₼ qazandı</div>
+      <div class="t-item">🔥 <strong>Elvin</strong> — 1,200 ₼ qazandı</div>
+      <div class="t-item">⭐ <strong>Leyla</strong> — 430 ₼ qazandı</div>
+      <div class="t-item">🏆 <strong>Murad</strong> — 2,100 ₼ qazandı</div>
+      <div class="t-item">💰 <strong>Nigar</strong> — 670 ₼ qazandı</div>
+      <div class="t-item">🎊 <strong>Samir</strong> — 390 ₼ qazandı</div>
     </div>
   </div>
 
-  <!-- Win Ticker -->
-  <div class="win-ticker-wrap">
-    <div class="win-ticker" id="ticker">
-      <div class="win-item"><span class="avi">🎉</span><strong>Kamran</strong> — 320 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">💎</span><strong>Aytac</strong> — 850 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">🔥</span><strong>Elvin</strong> — 1,200 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">⭐</span><strong>Leyla</strong> — 430 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">🏆</span><strong>Murad</strong> — 2,100 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">💰</span><strong>Nigar</strong> — 670 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">🎊</span><strong>Samir</strong> — 390 ₼ qazandı</div>
-      <!-- Duplicate for seamless loop -->
-      <div class="win-item"><span class="avi">🎉</span><strong>Kamran</strong> — 320 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">💎</span><strong>Aytac</strong> — 850 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">🔥</span><strong>Elvin</strong> — 1,200 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">⭐</span><strong>Leyla</strong> — 430 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">🏆</span><strong>Murad</strong> — 2,100 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">💰</span><strong>Nigar</strong> — 670 ₼ qazandı</div>
-      <div class="win-item"><span class="avi">🎊</span><strong>Samir</strong> — 390 ₼ qazandı</div>
-    </div>
+  <!-- 🔥 MAIN CTA -->
+  <div class="cta-main">
+    <a href="https://tifliskz.com" class="cta-btn-main">
+      🎰 İNDİ OYNA — PULSUZ BONUS AL
+    </a>
   </div>
 
-  <!-- Offer -->
+  <!-- ✈️ TELEGRAM CTA -->
+  <div class="tg-section">
+    <a href="https://t.me/tifliskazinocom" class="tg-btn" target="_blank">
+      ✈️ TELEGRAM QRUPUNA QOŞUL
+      <span class="tg-badge">PULSUZ KOD</span>
+    </a>
+  </div>
+
+  <!-- OFFER -->
   <div class="offer-card">
     <div class="offer-icon">🎁</div>
-    <div class="offer-text">
+    <div>
       <div class="offer-title">İlk Depozitə Bonus!</div>
       <div class="offer-sub">Qeydiyyat keç → Depozit et → Pulsuz oyun kodu al</div>
     </div>
   </div>
 
-  <!-- Games -->
+  <!-- GAMES with real images -->
   <section class="games-section">
     <div class="section-title">🎮 Populyar Oyunlar</div>
     <div class="games-grid">
       <div class="game-card">
-        <div class="game-emoji">🎰<div class="game-name">Slots</div></div>
+        <img src="https://tifliskz.com/images/hot-sevens-extreme.png" alt="Hot Sevens Extreme" loading="lazy">
+        <div class="game-overlay">Hot Sevens</div>
+        <div class="game-hot">🔥 HOT</div>
+      </div>
+      <div class="game-card">
+        <img src="https://tifliskz.com/images/fire-rage.png" alt="Fire Rage" loading="lazy">
+        <div class="game-overlay">Fire Rage</div>
         <div class="game-hot">HOT</div>
       </div>
       <div class="game-card">
-        <div class="game-emoji">📈<div class="game-name">Crash</div></div>
+        <img src="https://tifliskz.com/images/fortune-star.png" alt="Fortune Star" loading="lazy">
+        <div class="game-overlay">Fortune Star</div>
+      </div>
+      <div class="game-card">
+        <img src="https://tifliskz.com/images/gates-of-avalon.png" alt="Gates of Avalon" loading="lazy">
+        <div class="game-overlay">Gates of Avalon</div>
+        <div class="game-new">YENİ</div>
+      </div>
+      <div class="game-card">
+        <img src="https://tifliskz.com/images/book-of-sphinx.png" alt="Book of Sphinx" loading="lazy">
+        <div class="game-overlay">Book of Sphinx</div>
+      </div>
+      <div class="game-card">
+        <img src="https://tifliskz.com/images/sevens-on-fire.png" alt="Sevens on Fire" loading="lazy">
+        <div class="game-overlay">Sevens on Fire</div>
         <div class="game-hot">🔥</div>
       </div>
       <div class="game-card">
-        <div class="game-emoji">🃏<div class="game-name">Klassik</div></div>
+        <img src="https://tifliskz.com/images/golden-harvest.png" alt="Golden Harvest" loading="lazy">
+        <div class="game-overlay">Golden Harvest</div>
       </div>
       <div class="game-card">
-        <div class="game-emoji">7️⃣<div class="game-name">Hot Sevens</div></div>
+        <img src="https://tifliskz.com/images/king-of-jewels.png" alt="King of Jewels" loading="lazy">
+        <div class="game-overlay">King of Jewels</div>
       </div>
       <div class="game-card">
-        <div class="game-emoji">🏆<div class="game-name">Seka</div></div>
-      </div>
-      <div class="game-card">
-        <div class="game-emoji">⭐<div class="game-name">Fortune</div></div>
-        <div class="game-hot">YENİ</div>
+        <img src="https://tifliskz.com/images/aztec-century.png" alt="Aztec Century" loading="lazy">
+        <div class="game-overlay">Aztec Century</div>
+        <div class="game-new">YENİ</div>
       </div>
     </div>
   </section>
 
-  <!-- Main CTA -->
-  <div class="cta-wrap">
-    <a href="https://tifliskz.com" class="cta-btn">
-      🎰 İNDİ QEYDIYYAT KEÇ — PULSUZ OYNA
+  <!-- BOTTOM CTAs again -->
+  <div class="cta-main">
+    <a href="https://tifliskz.com" class="cta-btn-main">
+      🎰 QEYDIYYAT KEÇ — İNDİ BAŞLA
+    </a>
+  </div>
+  <div class="tg-section">
+    <a href="https://t.me/tifliskazinocom" class="tg-btn" target="_blank">
+      ✈️ TELEGRAM — PULSUZ KOD AL
     </a>
   </div>
 
-  <!-- Telegram -->
-  <a href="https://t.me/tifliskazinocom" class="tg-banner" target="_blank">
-    <div class="tg-icon">✈️</div>
-    <div class="tg-text">
-      <div class="tg-title">Telegram Qrupumuza Qoşul</div>
-      <div class="tg-sub">Pulsuz oyun kodları hər gün paylanır!</div>
-    </div>
-    <div class="tg-arrow">›</div>
-  </a>
-
-  <!-- Trust -->
+  <!-- TRUST -->
   <div class="trust-row">
     <div class="trust-item"><span class="ti">🔒</span>Təhlükəsiz</div>
     <div class="trust-item"><span class="ti">⚡</span>Ani Ödəniş</div>
@@ -440,64 +260,37 @@
     <div class="trust-item"><span class="ti">🇦🇿</span>Azərbaycan</div>
   </div>
 
-  <footer>
-    © 2026 Tiflis Kod. Bütün hüquqlar qorunur.<br>
-    <span style="color:rgba(255,255,255,0.15)">18+ Məsuliyyətli oynayın.</span>
-  </footer>
+  <footer>© 2026 Tiflis Kod. Bütün hüquqlar qorunur.<br><span style="color:rgba(255,255,255,.15)">18+ Məsuliyyətli oynayın.</span></footer>
 </div>
 
 <script>
-// Close popup
-function closePopup() {
-  document.getElementById('popup').style.display = 'none';
-}
-// Auto-close after 8s
-setTimeout(closePopup, 8000);
+function closePopup(){document.getElementById('popup').style.display='none'}
+setTimeout(closePopup,8000);
 
-// Animated particles
-const bg = document.getElementById('bg');
-const colors = ['#F5C518','#FFE066','#F0A500','#ffffff'];
-for (let i = 0; i < 25; i++) {
-  const p = document.createElement('div');
-  p.className = 'particle';
-  const size = Math.random() * 8 + 3;
-  p.style.cssText = `
-    width:${size}px; height:${size}px;
-    left:${Math.random()*100}%;
-    background:${colors[Math.floor(Math.random()*colors.length)]};
-    animation-duration:${Math.random()*15+10}s;
-    animation-delay:-${Math.random()*15}s;
-  `;
+// Particles
+const bg=document.getElementById('bg');
+const cols=['#F5C518','#FFE066','#F0A500','#ffffff'];
+for(let i=0;i<20;i++){
+  const p=document.createElement('div');p.className='pt';
+  const s=Math.random()*8+3;
+  p.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;background:${cols[Math.floor(Math.random()*4)]};animation-duration:${Math.random()*15+10}s;animation-delay:-${Math.random()*15}s;`;
   bg.appendChild(p);
 }
 
-// Jackpot counter animation
-let base = 1522;
-function animateJackpot() {
-  base += Math.floor(Math.random() * 3) + 1;
-  document.getElementById('jackpot').textContent = base.toLocaleString('az') + ' ₼';
-  setTimeout(animateJackpot, Math.random() * 2000 + 1000);
-}
-animateJackpot();
+// Jackpot counter
+let base=1522;
+(function tick(){base+=Math.floor(Math.random()*3)+1;document.getElementById('jp').textContent=base.toLocaleString('az')+' ₼';setTimeout(tick,Math.random()*2000+800)})();
 
-// Online users counter
-let online = 127;
-function animateOnline() {
-  online += Math.floor(Math.random() * 5) - 2;
-  online = Math.max(100, Math.min(200, online));
-  document.getElementById('online-count').textContent = online;
-  setTimeout(animateOnline, Math.random() * 3000 + 2000);
-}
-animateOnline();
+// Online users
+let online=127;
+(function tickO(){online+=Math.floor(Math.random()*5)-2;online=Math.max(100,Math.min(200,online));document.getElementById('oc').textContent=online;setTimeout(tickO,Math.random()*3000+2000)})();
 
-// Stats counter
-let users = 4812;
-function animateUsers() {
-  users += Math.floor(Math.random() * 3);
-  document.getElementById('stat-users').textContent = users.toLocaleString('az');
-  setTimeout(animateUsers, Math.random() * 5000 + 3000);
-}
-animateUsers();
+// Stats users
+let users=4812;
+(function tickU(){users+=Math.floor(Math.random()*2);document.getElementById('su').textContent=users.toLocaleString('az');setTimeout(tickU,Math.random()*5000+3000)})();
+
+// Game cards → go to main site
+document.querySelectorAll('.game-card').forEach(c=>c.addEventListener('click',()=>window.location='https://tifliskz.com'));
 </script>
 </body>
 </html>
